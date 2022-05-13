@@ -1,0 +1,7 @@
+Computation time without multithreading: 0.003534
+Computation time with multithreading: 0.001842
+Application 7971928 resources: utime ~0s, stime ~0s, Rss ~12772, inblocks ~68, outblocks ~0
+
+real	0m2.438s
+user	0m0.001s
+sys	0m0.007s

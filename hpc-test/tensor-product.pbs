@@ -1,0 +1,23 @@
+## Name of the Job 
+#PBS -N tensor-product
+
+## Queue it will run in
+#PBS -q devel
+
+## Select 1 node with 40 processors
+#PBS -l select=1:ncpus=40:vntype=cray_compute
+
+## Pack all of them in 1 node
+#PBS -l place=pack
+
+## Join output and error in a single file
+#PBS -j oe
+
+## Export the environment vaiables from your shell
+#PBS -V
+
+# Set this to be the directory from where the job is submitted
+cd $PBS_O_WORKDIR
+
+## Job with 1 MPI Process and 40 threads
+time aprun -n 1 -N 1 -d 40 ./tensor-product
