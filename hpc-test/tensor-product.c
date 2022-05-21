@@ -2,49 +2,61 @@
 #include <stdlib.h>
 #include "omp.h"
 
-#define dimA 5000 
-#define dimB 200
-#define dimC 5000*200
+#define dimA 80000 
+#define dimB 16000
 
 double drand(double low, double high)
 {
-  return ( (double)rand() * ( high - low ) ) / (double)RAND_MAX + low;
+       	return ( (double)rand() * ( high - low ) ) / (double)RAND_MAX + low;
 }
 
 int main()
 {
-  int i;
-  int A[dimA], B[dimB], C[dimC], D[dimC];
+      	int i;
+      	double *A, *B, *C, *D;
 
-  for (i = 0; i < dimA; i++) {
-    A[i] = drand(0.0, 1.0);
-  }
-  for (i = 0; i < dimB; i++) {
-    B[i] = drand(0.0, 1.0);
-  }
+      	A = malloc(dimA * sizeof(double));
+      	B = malloc(dimB * sizeof(double));
+      	C = malloc(dimA * dimB * sizeof(double));
+      	D = malloc(dimA * dimB * sizeof(double));
 
-  // No multithreading
-  int p, q;
-  double now = omp_get_wtime();
-  for (p = 0; p < dimA; p++) {
-    for (q = 0; q < dimB; q++) {
-      C[dimB * p + q] = A[p] * B[q];
-    }   
-  }
-  printf("Computation time without multithreading: %f\n", omp_get_wtime() - now);
+      	for (i = 0; i < dimA; i++) {
+	    	*(A + i) = drand(0.0, 1.0);
+      	}
+      	for (i = 0; i < dimB; i++) {
+	    	*(B + i) = drand(0.0, 1.0);
+      	}
 
-  // Multithreading
-  now = omp_get_wtime();
-#pragma omp parallel
-  {
-    int j, k;
-    #pragma omp for
-      for (j = 0; j < dimA; j++) {
-        for (k = 0; k < dimB; k++) {
-          D[dimB * j + k] = A[j] * B[k];
-        }
-      }   
-  }
-  printf("Computation time with multithreading: %f\n", omp_get_wtime() - now);
+      	// No multithreading
+	int p, q;
+      	double now = omp_get_wtime();
+      	for (p = 0; p < dimA; p++) {
+	    	for (q = 0; q < dimB; q++) {
+		  	C[dimB * p + q] = A[p] * B[q];
+	    	}   
+      	}
+      	double no_multithreading = omp_get_wtime() - now;
 
+      	// Multithreading
+	now = omp_get_wtime();
+#pragma omp parallel for collapse(2) num_threads(64)
+      	for (int j = 0; j < dimA; j++) {
+      		for (int k = 0; k < dimB; k++) {
+      			D[dimB * j + k] = A[j] * B[k];
+      		}
+      	}   
+	double multithreading = omp_get_wtime() - now;
+	printf("Speedup for dimA: %d and dimB: %d: %f\n", dimA, dimB, no_multithreading / multithreading);
+
+      	free(A);  
+	A = NULL;
+
+      	free(B);  
+	B = NULL;
+
+      	free(C);
+	C = NULL;
+
+      	free(D);
+      	D = NULL;
 }
