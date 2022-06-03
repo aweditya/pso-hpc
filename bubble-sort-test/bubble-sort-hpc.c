@@ -33,8 +33,7 @@ void sort(double* A)
 
 int main(int argc, char **argv)
 {
-        // srand(time(0));
-        // int thread_count = atoi(argv[1]);
+        int thread_count = atoi(argv[1]);
 
         double *A; 
         A = malloc(number * length * sizeof(double));
@@ -44,17 +43,15 @@ int main(int argc, char **argv)
                 *(A + i) = drand(0.0, 1.0);
         }
 
-        // omp_set_num_threads(thread_count);
+        omp_set_num_threads(thread_count);
         double now = omp_get_wtime();
-#pragma omp parallel
-{
-        printf("Number of threads: %d\n", omp_get_num_threads());
-#pragma omp for 
+
+#pragma omp parallel for
         for (int j = 0; j < number; j++)
         {    
                 sort(A + length * j); 
         }
-}
+
         double multithreading = omp_get_wtime() - now;
         printf("Execution time for Bubble sort on %d arrays of length %d: %f\n", number, length, multithreading);
 
