@@ -18,14 +18,13 @@
 
 cd /home/pso/mbpatil/aditya/bubble-sort
 
-time aprun -n 1 ./bubble-sort 
-time aprun -n 1 ./bubble-sort 
-time aprun -n 1 ./bubble-sort 
-time aprun -n 1 ./bubble-sort 
-time aprun -n 1 ./bubble-sort 
-time aprun -n 1 ./bubble-sort 
-time aprun -n 1 ./bubble-sort 
-time aprun -n 1 ./bubble-sort 
-time aprun -n 1 ./bubble-sort 
-time aprun -n 1 ./bubble-sort 
-
+time aprun -n 1 ./bubble-sort 1 
+time aprun -n 1 ./bubble-sort 2
+time aprun -n 1 ./bubble-sort 4
+time aprun -n 1 ./bubble-sort 8
+time aprun -n 1 ./bubble-sort 16
+time aprun -n 1 ./bubble-sort 20
+time aprun -n 1 ./bubble-sort 24
+time aprun -n 1 ./bubble-sort 28
+time aprun -n 1 ./bubble-sort 32
+time aprun -n 1 ./bubble-sort 40
