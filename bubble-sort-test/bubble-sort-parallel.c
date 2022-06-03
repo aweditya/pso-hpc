@@ -1,76 +1,102 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "omp.h"
-
-#define number 100000
-#define length 10
+#include "sched.h"
 
 double drand(double low, double high)
 {
-        return ((double)rand() * (high - low)) / (double)RAND_MAX + low;
+	return ((double)rand() * (high - low)) / (double)RAND_MAX + low;
 }
 
-void sort(double* A)
+void init_array(double *A, int number, int length)
+{
+	for (int i = 0; i < number * length; i++)
+	{
+		*(A + i) = drand(0.0, 1.0);
+	}
+}
+
+void sort(double *A, int length)
 {
 	double temp;
 	for (int i = 0; i < length - 1; i++)
-        {
-                for (int j = 0; j < length - i - 1; j++)
-                {
-                        if (A[j] > A[j + 1])
-                        {
-                                temp = A[j];
-                                A[j] = A[j + 1];
-                                A[j + 1] = temp;
-                        }
-                }
-        }
+	{
+		for (int j = 0; j < length - i - 1; j++)
+		{
+			if (A[j] > A[j + 1])
+			{
+				temp = A[j];
+				A[j] = A[j + 1];
+				A[j + 1] = temp;
+			}
+		}
+	}
 }
 
-int main()
+int main(int argc, char **argv)
 {
+	int number = 100000;
+	int length = 10;
+	int thread_number = omp_get_max_threads();
+	int mode = 2;
+
+	if (argc == 5)
+	{
+		thread_number = atoi(argv[1]);
+		number = atoi(argv[2]);
+		length = atoi(argv[3]);
+		mode = atoi(argv[4]);
+	}
+
 	double *A, *B;
 	A = malloc(number * length * sizeof(double));
 	B = malloc(number * length * sizeof(double));
-	
-	for (int i = 0; i < number * length; i++)
-	{
-		*(A + i) = drand(0.0, 1.0); 
-		*(B + i) = *(A + i);
-	}
 
-	/*
-	for (int i = 0; i < number * length; i++)
-	{
-		printf("%f\n", A[i]);
-	}
-	*/
-	double now = omp_get_wtime();
-	for (int j = 0; j < number; j++)
-	{
-		sort(A + length * j);
-	}
-	double no_multithreading = omp_get_wtime() - now;
+	init_array(A, number, length);
+	init_array(B, number, length);
+
+	double now;
+	double no_multithreading, multithreading;
 
 	now = omp_get_wtime();
-#pragma omp parallel for 
 	for (int j = 0; j < number; j++)
-	{			
-		sort(B + length * j);
+	{
+		sort(A + length * j, length);
 	}
-	double multithreading = omp_get_wtime() - now;
-	double speedup = no_multithreading / multithreading;
+	no_multithreading = omp_get_wtime() - now;
 
-	/*
-	for (int i = 0; i < number * length; i++)
-        {
-                printf("%f\n", A[i]);
-        }
-	*/
+	omp_set_num_threads(thread_number);
+	now = omp_get_wtime();
+#pragma omp parallel for
+	for (int j = 0; j < number; j++)
+	{
+		// printf("%d\n", sched_getcpu());
+		sort(B + length * j, length);
+	}
+	multithreading = omp_get_wtime() - now;
 
-	printf("Speedup for Bubble sort on %d arrays of length %d: %f\n", number, length, speedup);
+	if (mode == 0)
+	{
+		printf("%lf %d %d %d 1 %lf\n", omp_get_wtime(), mode, number, length, no_multithreading);
+	}
+	else if (mode == 1)
+	{
+		printf("%lf %d %d %d %d %lf\n", omp_get_wtime(), mode, number, length, thread_number, multithreading);
+	}
+	else if (mode == 2)
+	{
+		printf("%lf %d %d %d %d %lf %lf\n", omp_get_wtime(), mode, number, length, thread_number, no_multithreading, multithreading);
+	}
+	else
+	{
+		printf("Mode not supported\n");
+	}
 
-	free(A); A = NULL;
-	free(B); B = NULL;
+	free(A);
+	A = NULL;
+	free(B);
+	B = NULL;
 	return 0;
 }
