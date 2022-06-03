@@ -1,0 +1,31 @@
+## Name of the Job 
+#PBS -N bubble-sort
+
+## Queue it will run in
+#PBS -q devel
+
+## Select 1 node with 40 processors
+#PBS -l select=1:ncpus=40:vntype=cray_compute
+
+## Pack all of them in 1 node
+#PBS -l place=pack
+
+## Join output and error in a single file
+#PBS -j oe
+
+## Export the environment vaiables from your shell
+#PBS -V
+
+cd /home/pso/mbpatil/aditya/bubble-sort
+
+time aprun -n 1 ./bubble-sort 
+time aprun -n 1 ./bubble-sort 
+time aprun -n 1 ./bubble-sort 
+time aprun -n 1 ./bubble-sort 
+time aprun -n 1 ./bubble-sort 
+time aprun -n 1 ./bubble-sort 
+time aprun -n 1 ./bubble-sort 
+time aprun -n 1 ./bubble-sort 
+time aprun -n 1 ./bubble-sort 
+time aprun -n 1 ./bubble-sort 
+
