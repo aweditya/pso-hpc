@@ -16,15 +16,35 @@
 ## Export the environment vaiables from your shell
 #PBS -V
 
-cd /home/pso/mbpatil/aditya/bubble-sort
+cd $PBS_O_WORKDIR
 
-time aprun -n 1 ./bubble-sort 1 
-time aprun -n 1 ./bubble-sort 2
-time aprun -n 1 ./bubble-sort 4
-time aprun -n 1 ./bubble-sort 8
-time aprun -n 1 ./bubble-sort 16
-time aprun -n 1 ./bubble-sort 20
-time aprun -n 1 ./bubble-sort 24
-time aprun -n 1 ./bubble-sort 28
-time aprun -n 1 ./bubble-sort 32
-time aprun -n 1 ./bubble-sort 40
+time aprun -n 1 -d 40 ./bubble-sort 1 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 2 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 4 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 8 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 16 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 20 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 24 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 28 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 32 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 40 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 60 200000 10 2
+time aprun -n 1 -d 40 ./bubble-sort 80 200000 10 2
+
+time aprun -n 1 -d 20 ./bubble-sort 1 200000 10 2
+time aprun -n 1 -d 20 ./bubble-sort 2 200000 10 2
+time aprun -n 1 -d 20 ./bubble-sort 4 200000 10 2
+time aprun -n 1 -d 20 ./bubble-sort 8 200000 10 2
+time aprun -n 1 -d 20 ./bubble-sort 16 200000 10 2
+time aprun -n 1 -d 20 ./bubble-sort 20 200000 10 2
+time aprun -n 1 -d 20 ./bubble-sort 24 200000 10 2
+time aprun -n 1 -d 20 ./bubble-sort 28 200000 10 2
+time aprun -n 1 -d 20 ./bubble-sort 32 200000 10 2
+time aprun -n 1 -d 20 ./bubble-sort 40 200000 10 2
+
+time aprun -n 1 -d 10 ./bubble-sort 1 200000 10 2
+time aprun -n 1 -d 10 ./bubble-sort 2 200000 10 2
+time aprun -n 1 -d 10 ./bubble-sort 4 200000 10 2
+time aprun -n 1 -d 10 ./bubble-sort 8 200000 10 2
+time aprun -n 1 -d 10 ./bubble-sort 16 200000 10 2
+time aprun -n 1 -d 10 ./bubble-sort 20 200000 10 2
