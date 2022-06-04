@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "omp.h"
 #include "sched.h"
 
@@ -37,66 +38,73 @@ void sort(double *A, int length)
 
 int main(int argc, char **argv)
 {
-	int number = 100000;
-	int length = 10;
-	int thread_number = omp_get_max_threads();
-	int mode = 2;
+        time_t rawtime;
+        struct tm* timeinfo;
 
-	if (argc == 5)
-	{
-		thread_number = atoi(argv[1]);
-		number = atoi(argv[2]);
-		length = atoi(argv[3]);
-		mode = atoi(argv[4]);
-	}
+        time (&rawtime);
+        timeinfo = localtime(&rawtime);
+        printf("%s", asctime(timeinfo));
 
-	double *A, *B;
-	A = malloc(number * length * sizeof(double));
-	B = malloc(number * length * sizeof(double));
+        int number = 100000;
+        int length = 10;
+        int thread_number = omp_get_max_threads();
+        int mode = 2;
 
-	init_array(A, number, length);
-	init_array(B, number, length);
+        if (argc == 5)
+        {
+                thread_number = atoi(argv[1]);
+                number = atoi(argv[2]);
+                length = atoi(argv[3]);
+                mode = atoi(argv[4]);
+        }
 
-	double now;
-	double no_multithreading, multithreading;
+        double *A, *B;
+        A = malloc(number * length * sizeof(double));
+        B = malloc(number * length * sizeof(double));
 
-	now = omp_get_wtime();
-	for (int j = 0; j < number; j++)
-	{
-		sort(A + length * j, length);
-	}
-	no_multithreading = omp_get_wtime() - now;
+        init_array(A, number, length);
+        init_array(B, number, length);
 
-	omp_set_num_threads(thread_number);
-	now = omp_get_wtime();
+        double now;
+        double no_multithreading, multithreading;
+
+        now = omp_get_wtime();
+        for (int j = 0; j < number; j++)
+        {
+                sort(A + length * j, length);
+        }
+        no_multithreading = omp_get_wtime() - now;
+
+        omp_set_num_threads(thread_number);
+        now = omp_get_wtime();
 #pragma omp parallel for
-	for (int j = 0; j < number; j++)
-	{
-		// printf("%d\n", sched_getcpu());
-		sort(B + length * j, length);
-	}
-	multithreading = omp_get_wtime() - now;
+        for (int j = 0; j < number; j++)
+        {
+                // printf("%d\n", sched_getcpu());
+                sort(B + length * j, length);
+        }
+        multithreading = omp_get_wtime() - now;
 
-	if (mode == 0)
-	{
-		printf("%lf %d %d %d 1 %lf\n", omp_get_wtime(), mode, number, length, no_multithreading);
-	}
-	else if (mode == 1)
-	{
-		printf("%lf %d %d %d %d %lf\n", omp_get_wtime(), mode, number, length, thread_number, multithreading);
-	}
-	else if (mode == 2)
-	{
-		printf("%lf %d %d %d %d %lf %lf\n", omp_get_wtime(), mode, number, length, thread_number, no_multithreading, multithreading);
-	}
-	else
-	{
-		printf("Mode not supported\n");
-	}
+        if (mode == 0)
+        {
+                printf("%d %d %d 1 %lf\n", mode, number, length, no_multithreading);
+        }
+        else if (mode == 1)
+        {
+                printf("%d %d %d %d %lf\n", mode, number, length, thread_number, multithreading);
+        }
+        else if (mode == 2)
+        {
+                printf("%d %d %d %d %lf %lf\n", mode, number, length, thread_number, no_multithreading, multithreading);
+        }
+        else
+        {
+                printf("Mode not supported\n");
+        }
 
-	free(A);
-	A = NULL;
-	free(B);
-	B = NULL;
-	return 0;
+        free(A);
+        A = NULL;
+        free(B);
+        B = NULL;
+        return 0;
 }
