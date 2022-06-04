@@ -78,7 +78,7 @@ double run_sort_single(int number, int length)
         free(A);
 }
 
-double run_sort_parallel(int number, int length)
+double run_sort_parallel(int number, int length, int thread_number)
 {
         double *A = malloc(number * length * sizeof(double));
         init_array(A, number, length);
@@ -130,13 +130,13 @@ int main(int argc, char **argv)
         }
         else if (mode == 1)
         {
-                double multithreading = run_sort_parallel(number, length);
+                double multithreading = run_sort_parallel(number, length, thread_number);
                 printf("%d %d %d %d %lf\n", mode, number, length, thread_number, multithreading);
         }
         else if (mode == 2)
         {
                 double no_multithreading = run_sort_single(number, length);
-                double multithreading = run_sort_parallel(number, length);
+                double multithreading = run_sort_parallel(number, length, thread_number);
                 printf("%d %d %d %d %lf %lf\n", mode, number, length, thread_number, no_multithreading, multithreading);
         }
         else
