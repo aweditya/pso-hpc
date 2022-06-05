@@ -76,6 +76,8 @@ double run_sort_single(int number, int length)
         }
         double run_time = omp_get_wtime() - now;
         free(A);
+
+	return run_time;
 }
 
 double run_sort_parallel(int number, int length, int thread_number)
@@ -93,6 +95,8 @@ double run_sort_parallel(int number, int length, int thread_number)
         }
         double run_time = omp_get_wtime() - now;
         free(A);
+
+	return run_time;
 }
 
 /*
