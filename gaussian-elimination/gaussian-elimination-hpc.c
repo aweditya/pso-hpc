@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "omp.h"
@@ -9,7 +10,7 @@ double drand(double low, double high)
     return ((double)rand() * (high - low)) / (double)RAND_MAX + low;
 }
 
-void init_matrix(double *a, int N, int M)
+void init_matrices(double *a, double *b, int N, int M)
 {
     for (int i = 0; i < N; i++)
     {
@@ -18,6 +19,7 @@ void init_matrix(double *a, int N, int M)
             for (int k = 0; k <= M; k++)
             {
                 a[i * M * (M + 1) + j * (M + 1) + k] = drand(-1.0, 1.0);
+                b[i * M * (M + 1) + j * (M + 1) + k] = a[i * M * (M + 1) + j * (M + 1) + k];
             }
         }
     }
@@ -89,12 +91,25 @@ void solve_one_instance(double *instance, int N, int M)
         instance[i * (M + 1) + M] /= instance[i * (M + 2)];
 }
 
-void solve_serial(double *a, int N, int M)
+double solve_serial(double *a, int N, int M)
 {
+    double now = omp_get_wtime();
     for (int i = 0; i < N; i++)
     {
         solve_one_instance(a + i * M * (M + 1), N, M);
     }
+    return omp_get_wtime() - now;
+}
+
+double solve_parallel(double *a, int N, int M)
+{
+    double now = omp_get_wtime();
+#pragma omp parallel for
+    for (int i = 0; i < N; i++)
+    {
+        solve_one_instance(a + i * M * (M + 1), N, M);
+    }
+    return omp_get_wtime() - now;
 }
 
 // L2 norm of solution (last column of instance)
@@ -122,7 +137,8 @@ double sum_l2(double *a, int N, int M)
 
 int main(int argc, char **argv)
 {
-    int N = 4, M = 2;
+    // Default parameters
+    int N = 2, M = 2;
 
     if (argc == 3)
     {
@@ -130,15 +146,22 @@ int main(int argc, char **argv)
         M = atoi(argv[2]);
     }
 
-    double *a;
+    double *a, *b;
     a = malloc(N * M * (M + 1) * sizeof(double));
+    b = malloc(N * M * (M + 1) * sizeof(double));
 
     // Random Initialisation
-    init_matrix(a, N, M);
- 
+    init_matrices(a, b, N, M);
+
     // Solve using GEM (serial)
-    solve_serial(a, N, M);
+    double serial = solve_serial(a, N, M);
     printf("Sum of L2 norm: %lf\n", sum_l2(a, N, M));
-    
+    printf("Runtime (without multithreading): %lf\n", serial);
+
+    // Solve using GEM (parallel)
+    double parallel = solve_parallel(b, N, M);
+    printf("Sum of L2 norm: %lf\n", sum_l2(b, N, M));
+    printf("Runtime (with multithreading): %lf\n", parallel);
+
     return 0;
 }
