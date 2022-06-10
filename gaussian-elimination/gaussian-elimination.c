@@ -7,7 +7,7 @@
 
 double drand(double low, double high)
 {
-        return ((double)rand() * (high - low)) / (double)RAND_MAX + low;
+    return ((double)rand() * (high - low)) / (double)RAND_MAX + low;
 }
 
 void init_matrix(double *a)
@@ -80,7 +80,7 @@ void solve(double *a)
 
     // Get the solution in the last column
     for (int i = 0; i < M; i++)
-        a[i * (M + 1) + M] /= a[i * (M + 2)];    
+        a[i * (M + 1) + M] /= a[i * (M + 2)];
 }
 
 // L2 norm of solution (last column of a)
@@ -89,7 +89,7 @@ double l2_norm(double *a)
     double norm = 0.0;
     for (int i = 0; i < M; i++)
     {
-        norm += a[i * (M + 1) + M] * a[i * (M + 1) + M]; 
+        norm += a[i * (M + 1) + M] * a[i * (M + 1) + M];
     }
 
     return norm;
