@@ -163,5 +163,7 @@ int main(int argc, char **argv)
     printf("Sum of L2 norm: %lf\n", sum_l2(b, N, M));
     printf("Runtime (with multithreading): %lf\n", parallel);
 
+    free(b); b = NULL;
+    free(a); a = NULL;
     return 0;
 }

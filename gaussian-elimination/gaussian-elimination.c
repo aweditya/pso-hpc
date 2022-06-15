@@ -104,5 +104,7 @@ int main()
 
     solve(a);
     printf("%lf\n", l2_norm(a));
+
+    free(a); a = NULL;
     return 0;
 }
