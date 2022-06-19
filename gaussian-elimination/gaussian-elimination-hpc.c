@@ -10,6 +10,21 @@ double drand(double low, double high)
     return ((double)rand() * (high - low)) / (double)RAND_MAX + low;
 }
 
+void init_vars(int *N, int *M)
+{
+        const char *number_of_instances = getenv("N");
+        if (number_of_instances)
+        {
+                *N = atoi(number_of_instances);
+        }
+
+        const char *matrix_dim = getenv("M");
+        if (matrix_dim)
+        {
+                *M = atoi(matrix_dim);
+        }
+}
+
 void init_matrices(double *a, double *b, int N, int M)
 {
     for (int i = 0; i < N; i++)
@@ -138,13 +153,15 @@ double sum_l2(double *a, int N, int M)
 int main(int argc, char **argv)
 {
     // Default parameters
-    int N = 2, M = 2;
+    int N = 200, M = 200;
 
     if (argc == 3)
     {
         N = atoi(argv[1]);
         M = atoi(argv[2]);
     }
+
+    init_vars(&N, &M);
 
     double *a, *b;
     a = malloc(N * M * (M + 1) * sizeof(double));
@@ -163,7 +180,7 @@ int main(int argc, char **argv)
     printf("Sum of L2 norm: %lf\n", sum_l2(b, N, M));
     printf("Runtime (with multithreading): %lf\n", parallel);
 
-    free(b); b = NULL;
     free(a); a = NULL;
+    free(b); b = NULL;
     return 0;
 }
