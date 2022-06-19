@@ -1,0 +1,69 @@
+## Name of the Job 
+#PBS -N gem
+
+## Queue it will run in
+#PBS -q devel
+
+## Select 1 node with 40 processors
+#PBS -l select=1:ncpus=40:vntype=cray_compute
+
+## Pack all of them in 1 node
+#PBS -l place=pack
+
+## Join output and error in a single file
+#PBS -j oe
+
+## Export the environment variables from your shell
+#PBS -V
+
+cd /home/pso/mbpatil/aditya/gaussian-elimination
+
+## Without compiler optimization
+echo "No compiler optimization"
+
+## Varying the number of problem instances
+echo "Varying the number of problem instances"
+time aprun -n 1 -d 40 ./gem 100 5000
+time aprun -n 1 -d 40 ./gem 200 5000
+time aprun -n 1 -d 40 ./gem 400 5000
+time aprun -n 1 -d 40 ./gem 800 5000
+time aprun -n 1 -d 40 ./gem 1600 5000
+time aprun -n 1 -d 40 ./gem 3200 5000
+time aprun -n 1 -d 40 ./gem 6400 5000
+time aprun -n 1 -d 40 ./gem 12800 5000
+
+## Varying the matrix dimension
+echo "Varying the matrix dimension"
+time aprun -n 1 -d 40 ./gem 5000 100
+time aprun -n 1 -d 40 ./gem 5000 200
+time aprun -n 1 -d 40 ./gem 5000 400
+time aprun -n 1 -d 40 ./gem 5000 800
+time aprun -n 1 -d 40 ./gem 5000 1600
+time aprun -n 1 -d 40 ./gem 5000 3200
+time aprun -n 1 -d 40 ./gem 5000 6400
+time aprun -n 1 -d 40 ./gem 5000 12800
+
+## With compiler optimization
+echo "With compiler optimization"
+
+## Varying the number of problem instances
+echo "Varying the number of problem instances"
+time aprun -n 1 -d 40 ./gem-o3 100 5000
+time aprun -n 1 -d 40 ./gem-o3 200 5000
+time aprun -n 1 -d 40 ./gem-o3 400 5000
+time aprun -n 1 -d 40 ./gem-o3 800 5000
+time aprun -n 1 -d 40 ./gem-o3 1600 5000
+time aprun -n 1 -d 40 ./gem-o3 3200 5000
+time aprun -n 1 -d 40 ./gem-o3 6400 5000
+time aprun -n 1 -d 40 ./gem-o3 12800 5000
+
+## Varying the matrix dimension
+echo "Varying the matrix dimension"
+time aprun -n 1 -d 40 ./gem-o3 5000 100
+time aprun -n 1 -d 40 ./gem-o3 5000 200
+time aprun -n 1 -d 40 ./gem-o3 5000 400
+time aprun -n 1 -d 40 ./gem-o3 5000 800
+time aprun -n 1 -d 40 ./gem-o3 5000 1600
+time aprun -n 1 -d 40 ./gem-o3 5000 3200
+time aprun -n 1 -d 40 ./gem-o3 5000 6400
+time aprun -n 1 -d 40 ./gem-o3 5000 12800
