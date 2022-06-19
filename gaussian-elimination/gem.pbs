@@ -23,47 +23,51 @@ echo "No compiler optimization"
 
 ## Varying the number of problem instances
 echo "Varying the number of problem instances"
-time aprun -n 1 -d 40 ./gem 100 5000
-time aprun -n 1 -d 40 ./gem 200 5000
-time aprun -n 1 -d 40 ./gem 400 5000
-time aprun -n 1 -d 40 ./gem 800 5000
-time aprun -n 1 -d 40 ./gem 1600 5000
-time aprun -n 1 -d 40 ./gem 3200 5000
-time aprun -n 1 -d 40 ./gem 6400 5000
-time aprun -n 1 -d 40 ./gem 12800 5000
+time aprun -n 1 -d 40 -e N=100 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=200 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=400 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=800 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=1600 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=3200 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=6400 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=12800 -e M=2500 ./gem
 
 ## Varying the matrix dimension
 echo "Varying the matrix dimension"
-time aprun -n 1 -d 40 ./gem 5000 100
-time aprun -n 1 -d 40 ./gem 5000 200
-time aprun -n 1 -d 40 ./gem 5000 400
-time aprun -n 1 -d 40 ./gem 5000 800
-time aprun -n 1 -d 40 ./gem 5000 1600
-time aprun -n 1 -d 40 ./gem 5000 3200
-time aprun -n 1 -d 40 ./gem 5000 6400
-time aprun -n 1 -d 40 ./gem 5000 12800
+time aprun -n 1 -d 40 -e N=5000 -e M=50 ./gem
+time aprun -n 1 -d 40 -e N=5000 -e M=100 ./gem
+time aprun -n 1 -d 40 -e N=5000 -e M=150 ./gem
+time aprun -n 1 -d 40 -e N=5000 -e M=200 ./gem
+time aprun -n 1 -d 40 -e N=5000 -e M=250 ./gem
+time aprun -n 1 -d 40 -e N=5000 -e M=300 ./gem
+time aprun -n 1 -d 40 -e N=5000 -e M=350 ./gem
+time aprun -n 1 -d 40 -e N=5000 -e M=400 ./gem
+time aprun -n 1 -d 40 -e N=5000 -e M=450 ./gem
+time aprun -n 1 -d 40 -e N=5000 -e M=500 ./gem
 
 ## With compiler optimization
 echo "With compiler optimization"
 
 ## Varying the number of problem instances
 echo "Varying the number of problem instances"
-time aprun -n 1 -d 40 ./gem-o3 100 5000
-time aprun -n 1 -d 40 ./gem-o3 200 5000
-time aprun -n 1 -d 40 ./gem-o3 400 5000
-time aprun -n 1 -d 40 ./gem-o3 800 5000
-time aprun -n 1 -d 40 ./gem-o3 1600 5000
-time aprun -n 1 -d 40 ./gem-o3 3200 5000
-time aprun -n 1 -d 40 ./gem-o3 6400 5000
-time aprun -n 1 -d 40 ./gem-o3 12800 5000
+time aprun -n 1 -d 40 -e N=100 -e M=2500 ./gem-o3
+time aprun -n 1 -d 40 -e N=200 -e M=2500 ./gem-o3
+time aprun -n 1 -d 40 -e N=400 -e M=2500 ./gem-o3
+time aprun -n 1 -d 40 -e N=800 -e M=2500 ./gem-o3
+time aprun -n 1 -d 40 -e N=1600 -e M=2500 ./gem-o3
+time aprun -n 1 -d 40 -e N=3200 -e M=2500 ./gem-o3
+time aprun -n 1 -d 40 -e N=6400 -e M=2500 ./gem-o3
+time aprun -n 1 -d 40 -e N=12800 -e M=2500 ./gem-o3
 
 ## Varying the matrix dimension
 echo "Varying the matrix dimension"
-time aprun -n 1 -d 40 ./gem-o3 5000 100
-time aprun -n 1 -d 40 ./gem-o3 5000 200
-time aprun -n 1 -d 40 ./gem-o3 5000 400
-time aprun -n 1 -d 40 ./gem-o3 5000 800
-time aprun -n 1 -d 40 ./gem-o3 5000 1600
-time aprun -n 1 -d 40 ./gem-o3 5000 3200
-time aprun -n 1 -d 40 ./gem-o3 5000 6400
-time aprun -n 1 -d 40 ./gem-o3 5000 12800
+time aprun -n 1 -d 40 -e N=5000 -e M=50 ./gem-o3
+time aprun -n 1 -d 40 -e N=5000 -e M=100 ./gem-o3
+time aprun -n 1 -d 40 -e N=5000 -e M=150 ./gem-o3
+time aprun -n 1 -d 40 -e N=5000 -e M=200 ./gem-o3
+time aprun -n 1 -d 40 -e N=5000 -e M=250 ./gem-o3
+time aprun -n 1 -d 40 -e N=5000 -e M=300 ./gem-o3
+time aprun -n 1 -d 40 -e N=5000 -e M=350 ./gem-o3
+time aprun -n 1 -d 40 -e N=5000 -e M=400 ./gem-o3
+time aprun -n 1 -d 40 -e N=5000 -e M=450 ./gem-o3
+time aprun -n 1 -d 40 -e N=5000 -e M=500 ./gem-o3
