@@ -12,20 +12,20 @@ double drand(double low, double high)
 
 void init_vars(int *N, int *M)
 {
-        const char *number_of_instances = getenv("N");
-        if (number_of_instances)
-        {
-                *N = atoi(number_of_instances);
-        }
+    const char *number_of_instances = getenv("N");
+    if (number_of_instances)
+    {
+        *N = atoi(number_of_instances);
+    }
 
-        const char *matrix_dim = getenv("M");
-        if (matrix_dim)
-        {
-                *M = atoi(matrix_dim);
-        }
+    const char *matrix_dim = getenv("M");
+    if (matrix_dim)
+    {
+        *M = atoi(matrix_dim);
+    }
 }
 
-void init_matrices(double *a, double *b, int N, int M)
+void init_matrices(double **a, double **b, int N, int M)
 {
     for (int i = 0; i < N; i++)
     {
@@ -33,14 +33,14 @@ void init_matrices(double *a, double *b, int N, int M)
         {
             for (int k = 0; k <= M; k++)
             {
-                a[i * M * (M + 1) + j * (M + 1) + k] = drand(-1.0, 1.0);
-                b[i * M * (M + 1) + j * (M + 1) + k] = a[i * M * (M + 1) + j * (M + 1) + k];
+                a[i][j * (M + 1) + k] = drand(-1.0, 1.0);
+                b[i][j * (M + 1) + k] = a[i][j * (M + 1) + k];
             }
         }
     }
 }
 
-void print_matrix(double *a, int N, int M)
+void print_matrix(double **a, int N, int M)
 {
     for (int i = 0; i < N; i++)
     {
@@ -48,7 +48,7 @@ void print_matrix(double *a, int N, int M)
         {
             for (int k = 0; k <= M; k++)
             {
-                printf("%lf ", a[i * M * (M + 1) + j * (M + 1) + k]);
+                printf("%lf ", a[i][j * (M + 1) + k]);
             }
             printf("\n");
         }
@@ -106,23 +106,23 @@ void solve_one_instance(double *instance, int N, int M)
         instance[i * (M + 1) + M] /= instance[i * (M + 2)];
 }
 
-double solve_serial(double *a, int N, int M)
+double solve_serial(double **a, int N, int M)
 {
     double now = omp_get_wtime();
     for (int i = 0; i < N; i++)
     {
-        solve_one_instance(a + i * M * (M + 1), N, M);
+        solve_one_instance(a[i], N, M);
     }
     return omp_get_wtime() - now;
 }
 
-double solve_parallel(double *a, int N, int M)
+double solve_parallel(double **a, int N, int M)
 {
     double now = omp_get_wtime();
 #pragma omp parallel for
     for (int i = 0; i < N; i++)
     {
-        solve_one_instance(a + i * M * (M + 1), N, M);
+        solve_one_instance(a[i], N, M);
     }
     return omp_get_wtime() - now;
 }
@@ -139,12 +139,12 @@ double l2_norm(double *instance, int N, int M)
     return norm;
 }
 
-double sum_l2(double *a, int N, int M)
+double sum_l2(double **a, int N, int M)
 {
     double sum = 0.0;
     for (int i = 0; i < N; i++)
     {
-        sum += l2_norm(a + i * M * (M + 1), N, M);
+        sum += l2_norm(a[i], N, M);
     }
 
     return sum;
@@ -155,32 +155,43 @@ int main(int argc, char **argv)
     // Default parameters
     int N = 200, M = 200;
 
-    if (argc == 3)
+    if (argc != 3)
     {
-        N = atoi(argv[1]);
-        M = atoi(argv[2]);
+        printf("Not enough arguments or too many arguments passed\n");
+        exit(0);
     }
+    N = atoi(argv[1]);
+    M = atoi(argv[2]);
 
     init_vars(&N, &M);
 
-    double *a, *b;
-    a = malloc(N * M * (M + 1) * sizeof(double));
-    b = malloc(N * M * (M + 1) * sizeof(double));
+    // double *a, *b;
+    double *a[N], *b[N];
+    for (int i = 0; i < N; i++)
+    {
+        a[i] = malloc(M * (M + 1) * sizeof(double));
+        b[i] = malloc(M * (M + 1) * sizeof(double));
+    }
 
     // Random Initialisation
     init_matrices(a, b, N, M);
 
     // Solve using GEM (serial)
     double serial = solve_serial(a, N, M);
-    printf("Sum of L2 norm: %lf\n", sum_l2(a, N, M));
-    printf("Runtime (without multithreading): %lf\n", serial);
+    double l2_norm_serial = sum_l2(a, N, M);
 
     // Solve using GEM (parallel)
     double parallel = solve_parallel(b, N, M);
-    printf("Sum of L2 norm: %lf\n", sum_l2(b, N, M));
-    printf("Runtime (with multithreading): %lf\n", parallel);
+    double l2_norm_parallel = sum_l2(a, N, M);
 
-    free(a); a = NULL;
-    free(b); b = NULL;
+    printf("Time, %d, %d, %lf, %lf, %lf, %lf, %lf\n", N, M, l2_norm_serial, l2_norm_parallel, serial, parallel, serial/parallel);
+
+    for (int i = 0; i < N; i++)
+    {
+        free(a[i]);
+        a[i] = NULL;
+        free(b[i]);
+        b[i] = NULL;
+    }
     return 0;
 }

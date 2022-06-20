@@ -18,27 +18,13 @@
 
 cd /home/pso/mbpatil/aditya/gaussian-elimination
 
-## Without compiler optimization
-echo "No compiler optimization"
-
 ## Varying the number of problem instances
 echo "Varying the number of problem instances"
-time aprun -n 1 -d 40 -e N=100 -e M=250 ./gem
-time aprun -n 1 -d 40 -e N=200 -e M=250 ./gem
-time aprun -n 1 -d 40 -e N=400 -e M=250 ./gem
-time aprun -n 1 -d 40 -e N=800 -e M=250 ./gem
-time aprun -n 1 -d 40 -e N=1600 -e M=250 ./gem
-time aprun -n 1 -d 40 -e N=3200 -e M=250 ./gem
-
-## Varying the matrix dimension
-echo "Varying the matrix dimension"
-time aprun -n 1 -d 40 -e N=500 -e M=5 ./gem
-time aprun -n 1 -d 40 -e N=500 -e M=10 ./gem
-time aprun -n 1 -d 40 -e N=500 -e M=15 ./gem
-time aprun -n 1 -d 40 -e N=500 -e M=20 ./gem
-time aprun -n 1 -d 40 -e N=500 -e M=25 ./gem
-time aprun -n 1 -d 40 -e N=500 -e M=30 ./gem
-time aprun -n 1 -d 40 -e N=500 -e M=35 ./gem
-time aprun -n 1 -d 40 -e N=500 -e M=40 ./gem
-time aprun -n 1 -d 40 -e N=500 -e M=45 ./gem
-time aprun -n 1 -d 40 -e N=500 -e M=50 ./gem
+time aprun -n 1 -d 40 -e N=100 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=200 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=400 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=800 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=1600 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=3200 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=6400 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e N=12800 -e M=2500 ./gem
