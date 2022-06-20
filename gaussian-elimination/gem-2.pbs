@@ -20,13 +20,13 @@ cd /home/pso/mbpatil/aditya/gaussian-elimination
 
 ## Varying the matrix dimension
 echo "Varying the matrix dimension"
-time aprun -n 1 -d 40 -e N=5000 -e M=50 ./gem
-time aprun -n 1 -d 40 -e N=5000 -e M=100 ./gem
-time aprun -n 1 -d 40 -e N=5000 -e M=150 ./gem
-time aprun -n 1 -d 40 -e N=5000 -e M=200 ./gem
-time aprun -n 1 -d 40 -e N=5000 -e M=250 ./gem
-time aprun -n 1 -d 40 -e N=5000 -e M=300 ./gem
-time aprun -n 1 -d 40 -e N=5000 -e M=350 ./gem
-time aprun -n 1 -d 40 -e N=5000 -e M=400 ./gem
-time aprun -n 1 -d 40 -e N=5000 -e M=450 ./gem
-time aprun -n 1 -d 40 -e N=5000 -e M=500 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=5000 -e M=50 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=5000 -e M=100 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=5000 -e M=150 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=5000 -e M=200 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=5000 -e M=250 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=5000 -e M=300 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=5000 -e M=350 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=5000 -e M=400 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=5000 -e M=450 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=5000 -e M=500 -e MODE=1 ./gem

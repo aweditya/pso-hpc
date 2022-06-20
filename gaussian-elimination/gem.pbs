@@ -20,11 +20,11 @@ cd /home/pso/mbpatil/aditya/gaussian-elimination
 
 ## Varying the number of problem instances
 echo "Varying the number of problem instances"
-time aprun -n 1 -d 40 -e N=100 -e M=2500 ./gem
-time aprun -n 1 -d 40 -e N=200 -e M=2500 ./gem
-time aprun -n 1 -d 40 -e N=400 -e M=2500 ./gem
-time aprun -n 1 -d 40 -e N=800 -e M=2500 ./gem
-time aprun -n 1 -d 40 -e N=1600 -e M=2500 ./gem
-time aprun -n 1 -d 40 -e N=3200 -e M=2500 ./gem
-time aprun -n 1 -d 40 -e N=6400 -e M=2500 ./gem
-time aprun -n 1 -d 40 -e N=12800 -e M=2500 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=100 -e M=2500 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=200 -e M=2500 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=400 -e M=2500 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=800 -e M=2500 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=1600 -e M=2500 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=3200 -e M=2500 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=6400 -e M=2500 -e MODE=1 ./gem
+time aprun -n 1 -d 40 -e OMP_PLACES=cores(40) -e N=12800 -e M=2500 -e MODE=1 ./gem
