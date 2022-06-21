@@ -18,14 +18,30 @@
 
 cd /home/pso/mbpatil/aditya/gaussian-elimination
 
-export OMP_PLACES=cores
-## Varying the number of problem instances
-echo "Varying the number of problem instances"
-time aprun -n 1 -d 40 -e N=100 -e M=2500 -e MODE=1 ./gem
-time aprun -n 1 -d 40 -e N=200 -e M=2500 -e MODE=1 ./gem
-time aprun -n 1 -d 40 -e N=400 -e M=2500 -e MODE=1 ./gem
-time aprun -n 1 -d 40 -e N=800 -e M=2500 -e MODE=1 ./gem
-time aprun -n 1 -d 40 -e N=1600 -e M=2500 -e MODE=1 ./gem
-time aprun -n 1 -d 40 -e N=3200 -e M=2500 -e MODE=1 ./gem
-time aprun -n 1 -d 40 -e N=6400 -e M=2500 -e MODE=1 ./gem
-time aprun -n 1 -d 40 -e N=12800 -e M=2500 -e MODE=1 ./gem
+## Setting default KMP_AFFINITY
+export KMP_AFFINITY=verbose,none
+## Setting the number of threads to be 20 (no hyperthreading)
+export OMP_NUM_THREADS=20
+## Using 20 threads to avoid hyperthreading. -j has been set to 1 to remove hyperthreading
+time aprun -n 1 -d 20 -j 1 -e OMP_DISPLAY_ENV=TRUE -e N=4000 -e M=400 -e MODE=2 ./gem
+
+## Using 20 threads to avoid hyperthreading. -j has been set to 1 to remove hyperthreading. -cc is also used to specify the thread-core binding
+time aprun -n 1 -d 20 -j 1 -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e OMP_DISPLAY_ENV=TRUE -e N=4000 -e M=400 -e MODE=2 ./gem
+
+## Trying the same using KMP_AFFINITY
+export KMP_AFFINITY=verbose,scatter
+time aprun -n 1 -d 20 -j 1 -e OMP_DISPLAY_ENV=TRUE -e N=4000 -e M=400 -e MODE=2 ./gem
+
+## Setting default KMP_AFFINITY
+export KMP_AFFINITY=verbose,none
+## Setting the number of threads to be 40 (hyperthreading)
+export OMP_NUM_THREADS=40
+## Using 40 threads. -j has been set to 1 to remove hyperthreading
+time aprun -n 1 -d 40 -j 1 -e OMP_DISPLAY_ENV=TRUE -e N=4000 -e M=400 -e MODE=2 ./gem
+
+## Using 40 threads. -j has been set to 1 to remove hyperthreading. -cc is also used to specify the thread-core binding
+time aprun -n 1 -d 40 -j 1 -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59 -e OMP_DISPLAY_ENV=TRUE -e N=4000 -e M=400 -e MODE=2 ./gem
+
+## Trying the same using KMP_AFFINITY
+export KMP_AFFINITY=verbose,scatter
+time aprun -n 1 -d 40 -j 1 -e OMP_DISPLAY_ENV=TRUE -e N=4000 -e M=400 -e MODE=2 ./gem
