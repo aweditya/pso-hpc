@@ -3,6 +3,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "sched.h"
 #include "omp.h"
 
 double drand(double low, double high)
@@ -125,10 +126,15 @@ double solve_serial(double **a, int N, int M)
 double solve_parallel(double **a, int N, int M)
 {
     double now = omp_get_wtime();
-#pragma omp parallel for num_threads(40)
-    for (int i = 0; i < N; i++)
+#pragma omp parallel
     {
-        solve_one_instance(a[i], N, M);
+	    double thread_time = omp_get_wtime();
+#pragma omp for 
+	    for (int i = 0; i < N; i++)
+	    {
+		    solve_one_instance(a[i], N, M);
+	    }
+	    printf("Run: %d, %d, %d, %lf\n", omp_get_num_threads(), omp_get_thread_num(), sched_getcpu(), omp_get_wtime() - thread_time);
     }
     return omp_get_wtime() - now;
 }
@@ -216,10 +222,8 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < N; i++)
     {
-        free(a[i]);
-        a[i] = NULL;
-        free(b[i]);
-        b[i] = NULL;
+        free(a[i]); a[i] = NULL;
+        free(b[i]); b[i] = NULL;
     }
     return 0;
 }
