@@ -30,10 +30,10 @@ time aprun -n 1 -d 20 -j 1 -ss -e N=100 -e M=200 -e MODE=2 ./gem
 time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
 
 ## Using 20 threads. -j has been set to 1 to remove hyperthreading. OMP_PROC_BIND=true and OMP_PLACES=core (-cc has to be removed)
-time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=true OMP_PLACES=cores -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=true -e OMP_PLACES=cores -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
 
 ## Using 20 threads. -j has been set to 1 to remove hyperthreading. OMP_PROC_BIND=true and OMP_PLACES=threads (-cc has to be removed)
-time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=true OMP_PLACES=threads -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=true -e OMP_PLACES=threads -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
 
 ## Using 20 threads. -j has been set to 1 to remove hyperthreading. OMP_PROC_BIND=true and OMP_PLACES=sockets (-cc has to be removed)
-time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=true OMP_PLACES=sockets -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=true -e OMP_PLACES=sockets -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
