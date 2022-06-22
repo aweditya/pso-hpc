@@ -18,22 +18,20 @@
 
 cd /home/pso/mbpatil/aditya/gaussian-elimination
 
-## Goal: Maximise the speedup for 20 cores and 20 threads
+## Setup environment variables
 export CRAY_OMP_CHECK_AFFINITY=true
+export OMP_DISPLAY_ENV=verbose
 export OMP_NUM_THREADS=20
 
+## Goal: Maximise the speedup for 20 cores and 20 threads
 ## Using -ss to ensure that only the current NUMA node memory is accessed
-## Using 20 threads. -j has been set to 1 to remove hyperthreading. -cc has not been set
-time aprun -n 1 -d 20 -j 1 -ss -e N=100 -e M=200 -e MODE=2 ./gem
-
 ## Using 20 threads to avoid hyperthreading. -j has been set to 1 to remove hyperthreading. -cc is also used to specify the thread-core binding
-time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e N=100 -e M=200 -e MODE=2 ./gem
 
-## Using 20 threads. -j has been set to 1 to remove hyperthreading. OMP_PROC_BIND=true and OMP_PLACES=core (-cc has to be removed)
-time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=true -e OMP_PLACES=cores -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
+## Using 20 threads. -j has been set to 1 to remove hyperthreading. 
+time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=auto -e OMP_PLACES=cores -e N=100 -e M=200 -e MODE=2 ./gem
 
-## Using 20 threads. -j has been set to 1 to remove hyperthreading. OMP_PROC_BIND=true and OMP_PLACES=threads (-cc has to be removed)
-time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=true -e OMP_PLACES=threads -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
-
-## Using 20 threads. -j has been set to 1 to remove hyperthreading. OMP_PROC_BIND=true and OMP_PLACES=sockets (-cc has to be removed)
-time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=true -e OMP_PLACES=sockets -e OMP_DISPLAY_ENV=verbose -e N=100 -e M=200 -e MODE=2 ./gem
+## Additional experimentation
+time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e N=500000 -e M=10 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e N=500000 -e M=10 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e N=500000 -e M=10 -e MODE=2 ./gem
