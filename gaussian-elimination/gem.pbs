@@ -19,6 +19,7 @@
 cd /home/pso/mbpatil/aditya/gaussian-elimination
 
 ## Goal: Maximise the speedup for 20 cores and 20 threads
+export CRAY_OMP_CHECK_AFFINITY=true
 export OMP_NUM_THREADS=20
 
 ## Using -ss to ensure that only the current NUMA node memory is accessed
