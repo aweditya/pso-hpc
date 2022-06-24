@@ -32,7 +32,7 @@ void init_vars(int *N, int *M, int *mode)
     }
 }
 
-void init_matrices(double **a, double **b, int N, int M)
+void serial_init(double **a, int N, int M)
 {
     for (int i = 0; i < N; i++)
     {
@@ -41,7 +41,21 @@ void init_matrices(double **a, double **b, int N, int M)
             for (int k = 0; k <= M; k++)
             {
                 a[i][j * (M + 1) + k] = drand(-1.0, 1.0);
-                b[i][j * (M + 1) + k] = a[i][j * (M + 1) + k];
+            }
+        }
+    }
+}
+
+void parallel_init(double **b, int N, int M)
+{
+#pragma omp parallel for
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < M; j++)
+        {
+            for (int k = 0; k <= M; k++)
+            {
+                b[i][j * (M + 1) + k] = drand(-1.0, 1.0);
             }
         }
     }
@@ -128,13 +142,13 @@ double solve_parallel(double **a, int N, int M)
     double now = omp_get_wtime();
 #pragma omp parallel
     {
-	    double thread_time = omp_get_wtime();
-#pragma omp for 
-	    for (int i = 0; i < N; i++)
-	    {
-		    solve_one_instance(a[i], N, M);
-	    }
-	    printf("Run: %d, %d, %d, %lf\n", omp_get_num_threads(), omp_get_thread_num(), sched_getcpu(), omp_get_wtime() - thread_time);
+        double thread_time = omp_get_wtime();
+#pragma omp for
+        for (int i = 0; i < N; i++)
+        {
+            solve_one_instance(a[i], N, M);
+        }
+        printf("Run: %d, %d, %d, %lf\n", omp_get_num_threads(), omp_get_thread_num(), sched_getcpu(), omp_get_wtime() - thread_time);
     }
     return omp_get_wtime() - now;
 }
@@ -164,6 +178,9 @@ double sum_l2(double **a, int N, int M)
 
 int main(int argc, char **argv)
 {
+    // Print CPU information
+    // int status = system("lscpu -e");
+
     // Default parameters
     int N = 200, M = 200, mode = 2;
 
@@ -189,7 +206,7 @@ int main(int argc, char **argv)
     if (mode == 0)
     {
         // Serial only
-        init_matrices(a, b, N, M);
+        serial_init(a, N, M);
         double serial = solve_serial(a, N, M);
         double l2_norm_serial = sum_l2(a, N, M);
 
@@ -198,7 +215,7 @@ int main(int argc, char **argv)
     else if (mode == 1)
     {
         // Parallel only
-        init_matrices(a, b, N, M);
+        parallel_init(b, N, M);
         double parallel = solve_parallel(b, N, M);
         double l2_norm_parallel = sum_l2(a, N, M);
 
@@ -207,7 +224,8 @@ int main(int argc, char **argv)
     else
     {
         // Both serial and parallel
-        init_matrices(a, b, N, M);
+        serial_init(a, N, M);
+        parallel_init(b, N, M);
 
         // Solve using GEM (serial)
         double serial = solve_serial(a, N, M);
@@ -222,8 +240,10 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < N; i++)
     {
-        free(a[i]); a[i] = NULL;
-        free(b[i]); b[i] = NULL;
+        free(a[i]);
+        a[i] = NULL;
+        free(b[i]);
+        b[i] = NULL;
     }
     return 0;
 }
