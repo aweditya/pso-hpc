@@ -6,11 +6,6 @@
 #include "sched.h"
 #include "omp.h"
 
-double drand(double low, double high, unsigned int seed)
-{
-    return ((double)rand_r(&seed) * (high - low)) / (double)RAND_MAX + low;
-}
-
 void init_vars(int *N, int *M, int *mode)
 {
     const char *number_of_instances = getenv("N");
@@ -58,7 +53,7 @@ void initialize_and_solve(int M)
     instance = malloc(M * (M + 1) * sizeof(double));
 
     // Initialise the matrix
-    int seed = 25234 + 17*omp_get_thread_num();
+    unsigned int seed = 25234 + 17*omp_get_thread_num();
     for (int row = 0; row < M; row++)
     {
         for (int column = 0; column <= M; column++)
