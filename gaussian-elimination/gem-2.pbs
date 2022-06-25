@@ -1,0 +1,50 @@
+## Name of the Job 
+#PBS -N gem
+
+## Queue it will run in
+#PBS -q devel
+
+## Select 1 node with 40 processors
+#PBS -l select=1:ncpus=40:vntype=cray_compute
+
+## Pack all of them in 1 node
+#PBS -l place=pack
+
+## Join output and error in a single file
+#PBS -j oe
+
+## Export the environment variables from your shell
+#PBS -V
+
+cd /home/pso/mbpatil/aditya/gaussian-elimination
+
+## Setup environment variables
+export CRAY_OMP_CHECK_AFFINITY=true
+export OMP_DISPLAY_ENV=verbose
+export OMP_NUM_THREADS=20
+## Goal: Maximise the speedup for 20 cores and 20 threads
+## Using -ss to ensure that only the current NUMA node memory is accessed
+## Using 20 threads to avoid hyperthreading. -j has been set to 1 to remove hyperthreading. -cc is also used to specify the thread-core binding
+time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,20,21,22,23,24,25,26,27,28,29 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -cc 10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,30,31,32,33,34,35,36,37,38,39 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -cc 40,41,42,43,44,45,46,47,48,49,60,61,62,63,64,65,66,67,68,69 -e N=4000 -e M=200 -e MODE=2 ./gem
+
+export OMP_NUM_THREADS=10
+## Goal: Maximise the speedup for 10 cores and 10 threads
+## Using -ss to ensure that only the current NUMA node memory is accessed
+## Using 20 threads to avoid hyperthreading. -j has been set to 1 to remove hyperthreading. -cc is also used to specify the thread-core binding
+time aprun -n 1 -d 10 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 10 -j 1 -ss -cc 10,11,12,13,14,15,16,17,18,19 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 10 -j 1 -ss -cc 20,21,22,23,24,25,26,27,28,29 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 10 -j 1 -ss -cc 30,31,32,33,34,35,36,37,38,39 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 10 -j 1 -ss -cc 40,41,42,43,44,45,46,47,48,49 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 10 -j 1 -ss -cc 50,51,52,53,54,55,56,57,58,59 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 10 -j 1 -ss -cc 60,61,62,63,64,65,66,67,68,69 -e N=4000 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 10 -j 1 -ss -cc 70,71,72,73,74,75,76,77,78,79 -e N=4000 -e M=200 -e MODE=2 ./gem
+
+
+## Observe speedup for 40 cores and 40 threads
+# time aprun -n 1 -d 40 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39 -e N=500000 -e M=20 -e MODE=2 ./gem
+# time aprun -n 1 -d 40 -ss -cc 0,1,2,3,4,5,6,7,8,9,20,21,22,23,24,25,26,27,28,29,40,41,42,43,44,45,46,47,48,49,60,61,62,63,64,65,66,67,68,69 -e N=500000 -e M=20 -e MODE=2 ./gem
