@@ -6,9 +6,9 @@
 #include "sched.h"
 #include "omp.h"
 
-double drand(double low, double high)
+double drand(double low, double high, unsigned int seed)
 {
-    return ((double)rand() * (high - low)) / (double)RAND_MAX + low;
+    return ((double)rand_r(&seed) * (high - low)) / (double)RAND_MAX + low;
 }
 
 void init_vars(int *N, int *M, int *mode)
@@ -40,7 +40,7 @@ void serial_init(double **a, int N, int M)
         {
             for (int k = 0; k <= M; k++)
             {
-                a[i][j * (M + 1) + k] = drand(-1.0, 1.0);
+                a[i][j * (M + 1) + k] = drand(-1.0, 1.0, k);
             }
         }
     }
@@ -55,7 +55,7 @@ void parallel_init(double **b, int N, int M)
         {
             for (int k = 0; k <= M; k++)
             {
-                b[i][j * (M + 1) + k] = drand(-1.0, 1.0);
+                b[i][j * (M + 1) + k] = drand(-1.0, 1.0, k);
             }
         }
     }
