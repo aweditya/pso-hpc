@@ -22,16 +22,21 @@ cd /home/pso/mbpatil/aditya/gaussian-elimination
 export CRAY_OMP_CHECK_AFFINITY=true
 export OMP_DISPLAY_ENV=verbose
 export OMP_NUM_THREADS=20
-
 ## Goal: Maximise the speedup for 20 cores and 20 threads
 ## Using -ss to ensure that only the current NUMA node memory is accessed
 ## Using 20 threads to avoid hyperthreading. -j has been set to 1 to remove hyperthreading. -cc is also used to specify the thread-core binding
-time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e N=100 -e M=200 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e N=4000 -e M=100 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,20,21,22,23,24,25,26,27,28,29 -e N=5000 -e M=100 -e MODE=2 ./gem
+time aprun -n 1 -d 20 -j 1 -ss -cc 10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29 -e N=4000 -e M=100 -e MODE=2 ./gem
 
-## Using 20 threads. -j has been set to 1 to remove hyperthreading. 
-time aprun -n 1 -d 20 -j 1 -ss -e OMP_PROC_BIND=auto -e OMP_PLACES=cores -e N=100 -e M=200 -e MODE=2 ./gem
+## Observe speedup for 10 cores and 10 threads
+export OMP_NUM_THREADS=10
+time aprun -n 1 -d 10 -ss -cc 0,1,2,3,4,5,6,7,8,9 -e N=4000 -e M=100 -e MODE=2 ./gem
+time aprun -n 1 -d 10 -ss -cc 20,21,22,23,24,25,26,27,28,29 -e N=4000 -e M=100 -e MODE=2 ./gem
+time aprun -n 1 -d 10 -ss -cc 30,31,32,33,34,35,36,37,38,39 -e N=4000 -e M=100 -e MODE=2 ./gem
 
-## Additional experimentation
-time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e N=500000 -e M=10 -e MODE=2 ./gem
-time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e N=500000 -e M=10 -e MODE=2 ./gem
-time aprun -n 1 -d 20 -j 1 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 -e N=500000 -e M=10 -e MODE=2 ./gem
+## Observe speedup for 40 cores and 40 threads
+export OMP_NUM_THREADS=40
+time aprun -n 1 -d 40 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39 -e N=4000 -e M=100 -e MODE=2 ./gem
+time aprun -n 1 -d 40 -ss -cc 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59 -e N=4000 -e M=100 -e MODE=2 ./gem
+time aprun -n 1 -d 40 -ss -cc 0,1,2,3,4,5,6,7,8,9,20,21,22,23,24,25,26,27,28,29,40,41,42,43,44,45,46,47,48,49,60,61,62,63,64,65,66,67,68,69 -e N=4000 -e M=100 -e MODE=2 ./gem
