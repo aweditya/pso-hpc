@@ -217,7 +217,7 @@ int main(int argc, char **argv)
         // Parallel only
         parallel_init(b, N, M);
         double parallel = solve_parallel(b, N, M);
-        double l2_norm_parallel = sum_l2(a, N, M);
+        double l2_norm_parallel = sum_l2(b, N, M);
 
         printf("Time, %d, %d, %lf, %lf\n", N, M, l2_norm_parallel, parallel);
     }
@@ -233,7 +233,7 @@ int main(int argc, char **argv)
 
         // Solve using GEM (parallel)
         double parallel = solve_parallel(b, N, M);
-        double l2_norm_parallel = sum_l2(a, N, M);
+        double l2_norm_parallel = sum_l2(b, N, M);
 
         printf("Time, %d, %d, %lf, %lf, %lf, %lf, %lf\n", N, M, l2_norm_serial, l2_norm_parallel, serial, parallel, serial / parallel);
     }
