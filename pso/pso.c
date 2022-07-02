@@ -3,6 +3,27 @@
 #include <math.h>
 
 #define PI acos(-1.0)
+#define DIM 2
+
+struct point
+{
+    double coordinate[DIM];
+};
+
+typedef struct point point;
+
+struct particle
+{
+    point position;
+    double velocity[DIM];
+
+    double fitness;
+
+    point best_fit_position;
+    double best_fit;
+};
+
+typedef struct particle particle;
 
 double drand(const double low, const double high)
 {
@@ -13,64 +34,48 @@ double drand(const double low, const double high)
 int main(int argc, char **argv)
 {
     int num_particles = 20;
-    if (argc == 2)
+    int n_pso = 20;     // Number of updates
+    int print_freq = 4; // Print frequency
+
+    if (argc == 4)
     {
         num_particles = atoi(argv[1]);
+        n_pso = atoi(argv[2]);
+        print_freq = atoi(argv[3]);
     }
 
-    double *p[num_particles]; // Coordinates of particles
-    for (int i = 0; i < num_particles; i++)
-    {
-        p[i] = malloc(2 * sizeof(double));
-    }
+    particle *particles;
+    particles = malloc(num_particles * sizeof(particle));
 
-    double *p_pbest[num_particles]; // Coordinates of best value found by each particle
-    for (int i = 0; i < num_particles; i++)
-    {
-        p_pbest[i] = malloc(2 * sizeof(double));
-    }
+    point overall_best_position; // Coordinates of overall best
+    double overall_best_fit;     // Overall best
+    int index_gbest;             // Index of particle that found the overall best
 
-    double *fvalue_pbest; // Best value found by each particle
-    fvalue_pbest = malloc(num_particles * sizeof(double));
-
-    double p_gbest[2]; // Coordinates of overall best
-    double fvalue_gbest; // Overall best
-    int index_gbest; // Index of particle that found the overall best
-
-    double *v[num_particles]; // Velocities of particles
-    for (int i = 0; i < num_particles; i++)
-    {
-        v[i] = malloc(2 * sizeof(double));
-    }
-
-    double *fvalue;
-    fvalue = malloc(num_particles * sizeof(double));
-
-    double sum[2], p_avg[2];
+    double sum[DIM], p_avg[DIM];
     FILE *fp, *fp1;
 
-    double w = 0.4; // Inertial weight
+    double w = 0.4;  // Inertial weight
     double p1 = 1.0; // Cognitive coefficient
     double p2 = 1.0; // Sociological coefficient
 
     // Boundaries of parameter space
-    double p_min[2], p_max[2];
-    p_min[0] = 0.0; p_max[0] = 8.0;
-    p_min[1] = 0.0; p_max[1] = 8.0;
+    double p_min[DIM], p_max[DIM];
+    p_min[0] = 0.0;
+    p_max[0] = 8.0;
+    p_min[1] = 0.0;
+    p_max[1] = 8.0;
 
-    int n_pso = 20; // Number of updates
-    int n1 = 4;
-
-    unsigned int iseed = 1;
-    srand(iseed);
+    unsigned int seed = 1;
+    srand(seed);
 
     // Randomly initialise particle positions and velocities
     for (int i = 0; i < num_particles; i++)
     {
-        for (int j = 0; j < 2; j++)
+        particles[i].best_fit = __DBL_MAX__;
+        for (int j = 0; j < DIM; j++)
         {
-            p[i][j] = drand(p_min[j], p_max[j]);
-            v[i][j] = 0.0;
+            particles[i].position.coordinate[j] = drand(p_min[j], p_max[j]);
+            particles[i].velocity[j] = 0.0;
         }
     }
 
@@ -79,11 +84,11 @@ int main(int argc, char **argv)
     for (int iter = 0; iter < n_pso; iter++)
     {
         // Write snapshot every n1 iterations
-        if (iter % n1 == 0)
+        if (iter % print_freq == 0)
         {
             for (int i = 0; i < num_particles; i++)
             {
-                fprintf(fp1, "%11.4e  %11.4e\n", p[i][0], p[i][1]);
+                fprintf(fp1, "%11.4e  %11.4e\n", particles[i].position.coordinate[0], particles[i].position.coordinate[1]);
             }
             fprintf(fp1, "\n");
         }
@@ -93,9 +98,9 @@ int main(int argc, char **argv)
         sum[1] = 0.0;
         for (int i = 0; i < num_particles; i++)
         {
-            for (int j = 0; j < 2; j++)
+            for (int j = 0; j < DIM; j++)
             {
-                sum[j] += p[i][j];
+                sum[j] += particles[i].position.coordinate[j];
             }
         }
         p_avg[0] = sum[0] / (double)num_particles;
@@ -103,85 +108,69 @@ int main(int argc, char **argv)
 
         fprintf(fp, "%d %11.4e %11.4e\n", iter, p_avg[0], p_avg[1]);
 
-        // Compute fitness
+        overall_best_fit = __DBL_MAX__;
         for (int i = 0; i < num_particles; i++)
         {
-            double x = p[i][0], y = p[i][1];
+            // Compute fitness
+            double x = particles[i].position.coordinate[0], y = particles[i].position.coordinate[1];
 
-            // fvalue[i] = sin(x)*cos(y);
-            fvalue[i] = sin(x) * cos(y) + 0.25 * x;
-            if (iter == 0)
-            {
-                fvalue_pbest[i] = fvalue[i];
-                p_pbest[i][0] = p[i][0];
-                p_pbest[i][1] = p[i][1];
-            }
-        }
+            // particles[i].current_fitness = sin(x)*cos(y);
+            particles[i].fitness = sin(x) * cos(y) + 0.25 * x;
 
-        // Find gbest
-        fvalue_gbest = 100.0;
-        for (int i = 0; i < num_particles; i++)
-        {
-            if (fvalue[i] < fvalue_gbest)
+            // Find gbest
+            if (particles[i].fitness < overall_best_fit)
             {
+                overall_best_fit = particles[i].fitness;
                 index_gbest = i;
-                fvalue_gbest = fvalue[i];
             }
         }
-        p_gbest[0] = p[index_gbest][0];
-        p_gbest[1] = p[index_gbest][1];
 
-        printf("p_gbest[0] = %11.4e p_gbest[1] = %11.4e \n", p_gbest[0], p_gbest[1]);
-
-        // Update pbest[i]
-        if (iter > 0)
+        for (int j = 0; j < DIM; j++)
         {
-            for (int i = 0; i < num_particles; i++)
-            {
-                if (fvalue[i] < fvalue_pbest[i])
-                {
-                    fvalue_pbest[i] = fvalue[i];
-                    p_pbest[i][0] = p[i][0];
-                    p_pbest[i][1] = p[i][1];
-                }
-            }
+            overall_best_position.coordinate[j] = particles[index_gbest].position.coordinate[j];
         }
 
-        // Update velocities
+        printf("p_gbest[0] = %11.4e p_gbest[1] = %11.4e \n", overall_best_position.coordinate[0], overall_best_position.coordinate[1]);
+
         for (int i = 0; i < num_particles; i++)
         {
-            for (int j = 0; j < 2; j++)
+            // Update pbest[i]
+            if (particles[i].fitness < particles[i].best_fit)
             {
+                particles[i].best_fit = particles[i].fitness;
+                for (int j = 0; j < DIM; j++)
+                {
+                    particles[i].best_fit_position.coordinate[j] = particles[i].position.coordinate[j];
+                }
+            }
+
+            for (int j = 0; j < DIM; j++)
+            {
+                // Update velocities
                 double r1 = drand(0.0, 1.0), r2 = drand(0.0, 1.0);
-                v[i][j] = w * v[i][j] + r1 * p1 * (p_pbest[i][j] - p[i][j]) + r2 * p2 * (p_gbest[j] - p[i][j]);
-            }
-        }
+                particles[i].velocity[j] = w * particles[i].velocity[j] + r1 * p1 * (particles[i].best_fit_position.coordinate[j] - particles[i].position.coordinate[j]) + r2 * p2 * (overall_best_position.coordinate[j] - particles[i].position.coordinate[j]);
 
-        // Move the particles
-        for (int i = 0; i < num_particles; i++)
-        {
-            for (int j = 0; j < 2; j++)
-            {
-                p[i][j] = p[i][j] + v[i][j];
-            }
-        }
+                // Move the particles
+                particles[i].position.coordinate[j] += particles[i].velocity[j];
 
-        // If particles go outside parameter space, put them back in
-        for (int i = 0; i < num_particles; i++)
-        {
-            for (int j = 0; j < 2; j++)
-            {
-                if (p[i][j] < p_min[j])
+                // If particles go outside parameter space, put them back in
+                for (int j = 0; j < DIM; j++)
                 {
-                    p[i][j] = p_min[j];
-                }
-                if (p[i][j] > p_max[j])
-                {
-                    p[i][j] = p_max[j];
+                    if (particles[i].position.coordinate[j] < p_min[j])
+                    {
+                        particles[i].position.coordinate[j] = p_min[j];
+                    }
+                    if (particles[i].position.coordinate[j] > p_max[j])
+                    {
+                        particles[i].position.coordinate[j] = p_max[j];
+                    }
                 }
             }
         }
     }
     fclose(fp);
     fclose(fp1);
+
+    free(particles);
+    particles = NULL;
 }
