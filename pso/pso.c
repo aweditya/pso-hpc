@@ -118,9 +118,10 @@ int main(int argc, char **argv)
             particles[i].fitness = sin(x) * cos(y) + 0.25 * x;
 
             // Find gbest
-            if (particles[i].fitness < overall_best_fit)
+            double current_fitness = particles[i].fitness;
+            if (current_fitness < overall_best_fit)
             {
-                overall_best_fit = particles[i].fitness;
+                overall_best_fit = current_fitness;
                 index_gbest = i;
             }
         }
