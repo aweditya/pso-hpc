@@ -6,12 +6,14 @@
 #define PI acos(-1.0)
 #define DIM 2
 
-/**********Type Definitions *************/
-typedef struct _point {
+/********** Type Definitions *************/
+typedef struct _point
+{
     double coordinate[DIM];
 } point_t;
 
-typedef struct _particle {
+typedef struct _particle
+{
     point_t position;
     double velocity[DIM];
     double fitness;
@@ -19,16 +21,14 @@ typedef struct _particle {
     double best_fit;
 } particle_t;
 
-/**********Global Variables *************/
+/********** Global Variables *************/
+double p_min[DIM]; // Lower bound of particle space
+double p_max[DIM]; // Upper bound of particle space
+double w = 0.4;    // Inertial weight
+double p1 = 1.0;   // Cognitive coefficient
+double p2 = 1.0;   // Sociological coefficient
 
-double p_min[DIM]; //lower bound of particle space
-double p_max[DIM]; //Upper bound of particle space
-double w = 0.4;    //Inertial weight
-double p1 = 1.0;   //Cognitive coefficient
-double p2 = 1.0;   //Sociological coefficient
-
-/**********Functions  *************/
-
+/********** Functions  *************/
 double drand(const double low, const double high, unsigned int *seed)
 {
     return low + (high - low) * ((double)rand_r(seed)) / ((double)RAND_MAX);
@@ -36,46 +36,42 @@ double drand(const double low, const double high, unsigned int *seed)
 
 void init_particles(particle_t *particles, int num_particles)
 {
-    // Randomly initialise particle positions and velocities
-    #pragma omp parallel
+// Randomly initialise particle positions and velocities
+#pragma omp parallel for
+    for (int i = 0; i < num_particles; i++)
     {
-        unsigned int seed = omp_get_thread_num()*17931+7391;
-        
-        #pragma omp for
-        for (int i = 0; i < num_particles; i++)
-        {
-            particles[i].best_fit = __DBL_MAX__;
-            for (int j = 0; j < DIM; j++)
-            {
-                particles[i].position.coordinate[j] = drand(p_min[j], p_max[j], &seed);
-                particles[i].velocity[j] = 0.0;
-            }
-        }
+        unsigned int seed = 7391 + 17931 * omp_get_thread_num();
 
+        particles[i].best_fit = __DBL_MAX__;
+        for (int j = 0; j < DIM; j++)
+        {
+            particles[i].position.coordinate[j] = drand(p_min[j], p_max[j], &seed);
+            particles[i].velocity[j] = 0.0;
+        }
     }
 }
 
-void init_stats(FILE **fp_avg, FILE **fp_snap) 
+void init_stats(FILE **fp_avg, FILE **fp_snap)
 {
     *fp_avg = fopen("avg.dat", "w");
     *fp_snap = fopen("snap.dat", "w");
 }
 
-void dump_stats(particle_t *particles, int num_particles, int iter, int print_freq, FILE *fp_avg, FILE *fp_snap) 
+void dump_stats(particle_t *particles, int num_particles, int iter, int print_freq, FILE *fp_avg, FILE *fp_snap)
 {
     double sum[DIM], p_avg[DIM];
-    
-    //Write snapshot every n1 iterations
+
+    // Write snapshot every print_freq iterations
     if (iter % print_freq == 0)
     {
         for (int i = 0; i < num_particles; i++)
         {
-            fprintf(fp_snap, "%11.4e  %11.4e\n", 
-                        particles[i].position.coordinate[0], particles[i].position.coordinate[1]);
+            fprintf(fp_snap, "%11.4e  %11.4e\n",
+                    particles[i].position.coordinate[0], particles[i].position.coordinate[1]);
         }
         fprintf(fp_snap, "\n");
     }
-    //Compute average position values (for output only)
+    // Compute average position values (for output only)
     sum[0] = 0.0;
     sum[1] = 0.0;
     for (int i = 0; i < num_particles; i++)
@@ -91,30 +87,30 @@ void dump_stats(particle_t *particles, int num_particles, int iter, int print_fr
     fprintf(fp_avg, "%d %11.4e %11.4e\n", iter, p_avg[0], p_avg[1]);
 }
 
-void close_stats(FILE *fp_avg, FILE *fp_snap) {
+void close_stats(FILE *fp_avg, FILE *fp_snap)
+{
     fclose(fp_avg);
     fclose(fp_snap);
 }
 
-
 void find_overall_best_fit(particle_t *particles, int num_particles, double *overall_best_fit, int *index_gbest)
 {
 #pragma omp parallel for
-    for (int i = 0; i < num_particles; i++) {
+    for (int i = 0; i < num_particles; i++)
+    {
         // Compute fitness
         double x = particles[i].position.coordinate[0], y = particles[i].position.coordinate[1];
-
-        // particles[i].current_fitness = sin(x)*cos(y);
         particles[i].fitness = sin(x) * cos(y) + 0.25 * x;
 
-        // Find gbest
+        // Find best fitness
         double current_fitness = particles[i].fitness;
         if (current_fitness < *overall_best_fit)
         {
-#pragma omp critical 
+#pragma omp critical
             {
                 *overall_best_fit = particles[*index_gbest].fitness;
-                if (current_fitness < *overall_best_fit) {
+                if (current_fitness < *overall_best_fit)
+                {
                     *index_gbest = i;
                     *overall_best_fit = current_fitness;
                 }
@@ -125,49 +121,42 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
 
 void process_particle(particle_t *particles, int num_particles, point_t overall_best_position)
 {
-    #pragma parallel 
+#pragma omp parallel for
+    for (int i = 0; i < num_particles; i++)
     {
         unsigned int seed = 25234 + 562325 * omp_get_thread_num();
-        #pragma omp for
-        for (int i = 0; i < num_particles; i++)
+
+        // Update best_fit of each particle
+        if (particles[i].fitness < particles[i].best_fit)
         {
-
-            // Update pbest[i]
-            if (particles[i].fitness < particles[i].best_fit)
-            {
-                particles[i].best_fit = particles[i].fitness;
-                for (int j = 0; j < DIM; j++)
-                {
-                    particles[i].best_fit_position.coordinate[j] = particles[i].position.coordinate[j];
-                }
-            }
-
+            particles[i].best_fit = particles[i].fitness;
             for (int j = 0; j < DIM; j++)
             {
-                // Update velocities
-                double r1 = drand(0.0, 1.0, &seed);
-                double r2 = drand(0.0, 1.0, &seed);
-                particles[i].velocity[j] = w * particles[i].velocity[j] 
-                                        + r1 * p1 * (particles[i].best_fit_position.coordinate[j] - particles[i].position.coordinate[j]) + 
-                                        r2 * p2 * (overall_best_position.coordinate[j] - particles[i].position.coordinate[j]);
-
-                // Move the particles
-                particles[i].position.coordinate[j] += particles[i].velocity[j];
-
-                // If particles go outside parameter space, put them back in
-                for (int j = 0; j < DIM; j++)
-                {
-                    if (particles[i].position.coordinate[j] < p_min[j])
-                    {
-                        particles[i].position.coordinate[j] = p_min[j];
-                    }
-                    if (particles[i].position.coordinate[j] > p_max[j])
-                    {
-                        particles[i].position.coordinate[j] = p_max[j];
-                    }
-                }
+                particles[i].best_fit_position.coordinate[j] = particles[i].position.coordinate[j];
             }
-        }    
+        }
+
+        for (int j = 0; j < DIM; j++)
+        {
+            // Update velocities
+            double r1 = drand(0.0, 1.0, &seed);
+            double r2 = drand(0.0, 1.0, &seed);
+            particles[i].velocity[j] = w * particles[i].velocity[j] + r1 * p1 * (particles[i].best_fit_position.coordinate[j] - particles[i].position.coordinate[j]) +
+                                       r2 * p2 * (overall_best_position.coordinate[j] - particles[i].position.coordinate[j]);
+
+            // Move the particles
+            particles[i].position.coordinate[j] += particles[i].velocity[j];
+
+            // If particles go outside parameter space, put them back in
+            for (int j = 0; j < DIM; j++)
+            {
+                if (particles[i].position.coordinate[j] < p_min[j])
+                    particles[i].position.coordinate[j] = p_min[j];
+
+                if (particles[i].position.coordinate[j] > p_max[j])
+                    particles[i].position.coordinate[j] = p_max[j];
+            }
+        }
     }
 }
 
@@ -175,11 +164,11 @@ void process_particle(particle_t *particles, int num_particles, point_t overall_
 int main(int argc, char **argv)
 {
     int num_particles = 20;
-    int n_pso = 20;     // Number of updates
-    int print_stats = 0; // Should dump stats or not
-    int print_freq = 4; // Print frequency
+    int n_pso = 20;      // Number of updates
+    int print_stats = 0; // Dump stats or not
+    int print_freq = 4;  // Print frequency
     FILE *fp_avg = NULL, *fp_snap = NULL;
-    
+
     if (argc == 5)
     {
         num_particles = atoi(argv[1]);
@@ -187,7 +176,7 @@ int main(int argc, char **argv)
         print_stats = atoi(argv[3]);
         print_freq = atoi(argv[4]);
     }
-    
+
     particle_t *particles;
     particles = malloc(num_particles * sizeof(particle_t));
 
@@ -195,22 +184,22 @@ int main(int argc, char **argv)
     double overall_best_fit;       // Overall best
     int index_gbest = 0;           // Index of particle that found the overall best
 
-    for(int i = 0; i < DIM; i++) {
-        p_min[i] = 0.0; 
-        p_max[i] = 8.0;    
+    for (int i = 0; i < DIM; i++)
+    {
+        p_min[i] = 0.0;
+        p_max[i] = 8.0;
     }
 
-    if (print_stats) {
+    if (print_stats)
         init_stats(&fp_avg, &fp_snap);
-    }
 
     double now = omp_get_wtime();
-
     init_particles(particles, num_particles);
 
     for (int iter = 0; iter < n_pso; iter++)
     {
-        if (print_stats) {
+        if (print_stats)
+        {
             dump_stats(particles, num_particles, iter, print_freq, fp_avg, fp_snap);
         }
 
@@ -222,15 +211,16 @@ int main(int argc, char **argv)
             overall_best_position.coordinate[j] = particles[index_gbest].position.coordinate[j];
         }
 
-        printf("p_gbest[0] = %11.4e p_gbest[1] = %11.4e \n", 
-            overall_best_position.coordinate[0], overall_best_position.coordinate[1]);
+        printf("p_gbest[0] = %11.4e p_gbest[1] = %11.4e \n",
+               overall_best_position.coordinate[0], overall_best_position.coordinate[1]);
 
         process_particle(particles, num_particles, overall_best_position);
     }
 
-    printf("time taken = %lf\n",omp_get_wtime()-now);
+    printf("Execution time: %lf\n", omp_get_wtime() - now);
 
-    if (print_stats) close_stats(fp_avg, fp_snap);
+    if (print_stats)
+        close_stats(fp_avg, fp_snap);
 
     free(particles);
     particles = NULL;
