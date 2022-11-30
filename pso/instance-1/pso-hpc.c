@@ -31,21 +31,19 @@ double p2 = 1.0;   // Sociological coefficient
 /********** Functions  *************/
 double drand(const double low, const double high, unsigned int *seed)
 {
-    return low + (high - low) * ((double)rand_r(seed)) / ((double)RAND_MAX);
+    return low + (high - low) * (double)rand_r(seed) / (double)RAND_MAX;
 }
 
-void init_particles(particle_t *particles, int num_particles)
+void init_particles(particle_t *particles, int num_particles, unsigned int *seeds)
 {
 // Randomly initialise particle positions and velocities
 #pragma omp parallel for
     for (int i = 0; i < num_particles; i++)
     {
-        unsigned int seed = 7391 + 17931 * omp_get_thread_num();
-
         particles[i].best_fit = __DBL_MAX__;
         for (int j = 0; j < DIM; j++)
         {
-            particles[i].position.coordinate[j] = drand(p_min[j], p_max[j], &seed);
+            particles[i].position.coordinate[j] = drand(p_min[j], p_max[j], &seeds[i]);
             particles[i].velocity[j] = 0.0;
         }
     }
@@ -119,13 +117,11 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
     }
 }
 
-void process_particle(particle_t *particles, int num_particles, point_t overall_best_position)
+void process_particle(particle_t *particles, int num_particles, point_t overall_best_position, unsigned int *seeds)
 {
 #pragma omp parallel for
     for (int i = 0; i < num_particles; i++)
     {
-        unsigned int seed = 25234 + 562325 * omp_get_thread_num();
-
         // Update best_fit of each particle
         if (particles[i].fitness < particles[i].best_fit)
         {
@@ -139,8 +135,8 @@ void process_particle(particle_t *particles, int num_particles, point_t overall_
         for (int j = 0; j < DIM; j++)
         {
             // Update velocities
-            double r1 = drand(0.0, 1.0, &seed);
-            double r2 = drand(0.0, 1.0, &seed);
+            double r1 = drand(0.0, 1.0, &seeds[i]);
+            double r2 = drand(0.0, 1.0, &seeds[i]);
             particles[i].velocity[j] = w * particles[i].velocity[j] + r1 * p1 * (particles[i].best_fit_position.coordinate[j] - particles[i].position.coordinate[j]) +
                                        r2 * p2 * (overall_best_position.coordinate[j] - particles[i].position.coordinate[j]);
 
@@ -177,6 +173,17 @@ int main(int argc, char **argv)
         print_freq = atoi(argv[4]);
     }
 
+    unsigned int seed = 1;
+    srand(seed);
+
+    // Create an array of seeds, one for each thread
+    unsigned int *seeds;
+    seeds = malloc(num_particles * sizeof(unsigned int));
+    for (int i = 0; i < num_particles; i++)
+    {
+        seeds[i] = rand();
+    }
+
     particle_t *particles;
     particles = malloc(num_particles * sizeof(particle_t));
 
@@ -194,7 +201,7 @@ int main(int argc, char **argv)
         init_stats(&fp_avg, &fp_snap);
 
     double now = omp_get_wtime();
-    init_particles(particles, num_particles);
+    init_particles(particles, num_particles, seeds);
 
     for (int iter = 0; iter < n_pso; iter++)
     {
@@ -214,7 +221,7 @@ int main(int argc, char **argv)
         printf("p_gbest[0] = %11.4e p_gbest[1] = %11.4e \n",
                overall_best_position.coordinate[0], overall_best_position.coordinate[1]);
 
-        process_particle(particles, num_particles, overall_best_position);
+        process_particle(particles, num_particles, overall_best_position, seeds);
     }
 
     printf("Execution time: %lf\n", omp_get_wtime() - now);
