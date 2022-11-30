@@ -3,7 +3,7 @@
 #include <math.h>
 #include "omp.h"
 
-#define DIM 1000
+#define DIM 100
 
 /********** Type Definitions *************/
 typedef struct _point
@@ -33,9 +33,8 @@ double drand(const double low, const double high, unsigned int *seed)
     return low + ((high - low) * ((double)rand_r(seed)) / ((double)RAND_MAX));
 }
 
-void init_problem(double *A[DIM], double *b)
+void init_problem(double *A[DIM], double *b, unsigned int seed)
 {
-    unsigned int seed = 1;
     for (int row = 0; row < DIM; row++)
     {
         b[row] = drand(-1.0, 1.0, &seed);
@@ -44,6 +43,16 @@ void init_problem(double *A[DIM], double *b)
             A[row][column] = drand(-1.0, 1.0, &seed);
         }
     }
+    /*
+        for (int row = 0; row < DIM; row++)
+        {
+            for (int column = 0; column < DIM; column++)
+            {
+                printf("%lf ", A[row][column]);
+            }
+            printf("%lf\n", b[row]);
+        }
+    */
 }
 
 double compute_objective(double *A[DIM], double *x, double *b)
@@ -61,13 +70,11 @@ double compute_objective(double *A[DIM], double *x, double *b)
     return norm;
 }
 
-void init_particles(particle_t *particles, int num_particles)
+void init_particles(particle_t *particles, int num_particles, unsigned int *seeds)
 {
     // Randomly initialise particle positions and velocities
 #pragma omp parallel
     {
-        unsigned int seed = 7391 + 17 * omp_get_thread_num();
-
 // printf("seed = %d %d \n", seed, omp_get_thread_num());
 #pragma omp for
         for (int i = 0; i < num_particles; i++)
@@ -75,7 +82,7 @@ void init_particles(particle_t *particles, int num_particles)
             particles[i].best_fit = __DBL_MAX__;
             for (int j = 0; j < DIM; j++)
             {
-                particles[i].position.coordinate[j] = drand(p_min[j], p_max[j], &seed);
+                particles[i].position.coordinate[j] = drand(p_min[j], p_max[j], &seeds[i]);
                 // printf("Thread no. %d. coordinates[%d] %11.4e ", omp_get_thread_num(), j, particles[i].position.coordinate[j]);
                 particles[i].velocity[j] = 0.0;
             }
@@ -166,12 +173,10 @@ void find_overall_best_fit(double *A[DIM], double *b, particle_t *particles, int
     }
 }
 
-void process_particle(particle_t *particles, int num_particles, point_t overall_best_position)
+void process_particle(particle_t *particles, int num_particles, point_t overall_best_position, unsigned int *seeds)
 {
 #pragma omp parallel
     {
-        unsigned int seed = 7391 + 17 * omp_get_thread_num();
-
 #pragma omp for
         for (int i = 0; i < num_particles; i++)
         {
@@ -188,8 +193,8 @@ void process_particle(particle_t *particles, int num_particles, point_t overall_
             for (int j = 0; j < DIM; j++)
             {
                 // Update velocities
-                double r1 = drand(0.0, 1.0, &seed);
-                double r2 = drand(0.0, 1.0, &seed);
+                double r1 = drand(0.0, 1.0, &seeds[i]);
+                double r2 = drand(0.0, 1.0, &seeds[i]);
                 particles[i].velocity[j] = w * particles[i].velocity[j] + r1 * p1 * (particles[i].best_fit_position.coordinate[j] - particles[i].position.coordinate[j]) +
                                            r2 * p2 * (overall_best_position.coordinate[j] - particles[i].position.coordinate[j]);
 
@@ -214,7 +219,7 @@ void process_particle(particle_t *particles, int num_particles, point_t overall_
 int main(int argc, char **argv)
 {
     int num_particles = 20;
-    int n_pso = 500;     // Number of updates
+    int n_pso = 1000;     // Number of updates
     int print_stats = 0; // Dump stats or not
     int print_freq = 4;  // Print frequency
     FILE *fp_avg = NULL, *fp_snap = NULL;
@@ -225,6 +230,16 @@ int main(int argc, char **argv)
         n_pso = atoi(argv[2]);
         print_stats = atoi(argv[3]);
         print_freq = atoi(argv[4]);
+    }
+
+    unsigned int seed = 1;
+    srand(seed);
+
+    unsigned int *seeds;
+    seeds = malloc(num_particles * sizeof(unsigned int));
+    for (int i = 0; i < num_particles; i++)
+    {
+        seeds[i] = rand();
     }
 
     particle_t *particles;
@@ -251,8 +266,9 @@ int main(int argc, char **argv)
 
     double *b;
     b = malloc(DIM * sizeof(double));
-    init_problem(A, b);
-    init_particles(particles, num_particles);
+    init_problem(A, b, seed);
+
+    init_particles(particles, num_particles, seeds);
 
     double now = omp_get_wtime();
     for (int iter = 0; iter < n_pso; iter++)
@@ -272,7 +288,7 @@ int main(int argc, char **argv)
         }
         // printf("\n");
 
-        process_particle(particles, num_particles, overall_best_position);
+        process_particle(particles, num_particles, overall_best_position, seeds);
     }
     printf("Execution time: %lf\n", omp_get_wtime() - now);
 
@@ -280,6 +296,15 @@ int main(int argc, char **argv)
     {
         close_stats(fp_avg, fp_snap);
     }
+
+    /*
+    for (int i = 0; i < DIM; i++)
+    {
+        printf("%lf ", overall_best_position.coordinate[i]);
+    }
+    */
+
+    printf("%lf\n", overall_best_fit);
 
     free(particles);
     particles = NULL;
