@@ -88,25 +88,29 @@ int main(int argc, char **argv)
         {
             for (int i = 0; i < num_particles; i++)
             {
-                fprintf(fp1, "%11.4e  %11.4e\n", particles[i].position.coordinate[0], particles[i].position.coordinate[1]);
+                for (int j = 0; j < DIM; j++)
+                {
+                    fprintf(fp1, "%11.4e ", particles[i].position.coordinate[j]);
+                }
+                fprintf(fp1, "\n");
             }
             fprintf(fp1, "\n");
         }
 
         // Compute average position values (for output only)
-        sum[0] = 0.0;
-        sum[1] = 0.0;
-        for (int i = 0; i < num_particles; i++)
+        fprintf(fp, "%d ", iter);
+        for (int i = 0; i < DIM; i++)
         {
-            for (int j = 0; j < DIM; j++)
+            sum[i] = 0.0;
+            for (int j = 0; j < num_particles; j++)
             {
-                sum[j] += particles[i].position.coordinate[j];
+                sum[i] += particles[j].position.coordinate[i];
             }
+            p_avg[i] = sum[i] / (double)num_particles;
+            fprintf(fp, "%11.4e ", p_avg[i]);
         }
-        p_avg[0] = sum[0] / (double)num_particles;
-        p_avg[1] = sum[1] / (double)num_particles;
 
-        fprintf(fp, "%d %11.4e %11.4e\n", iter, p_avg[0], p_avg[1]);
+        fprintf(fp, "\n");
 
         overall_best_fit = __DBL_MAX__;
         for (int i = 0; i < num_particles; i++)
