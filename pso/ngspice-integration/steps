@@ -1,0 +1,10 @@
+Parent to child: ngspice <filename>.cir
+
+loop for <n_pso> iterations
+	Parent to child: alter <component> <value>
+	Parent to child: op
+
+	Parent to child: print <objective>
+	Child to parent: <objective>
+	
+	PSO update	
