@@ -34,49 +34,49 @@ double drand(const double low, const double high)
     return low + (high - low) * (double)rand() / (double)RAND_MAX;
 }
 
-int c_to_ngspice(int write_fd, char *cmd, ssize_t cmdlen)
+int ngspice_transact(int write_fd, char *cmd, ssize_t cmdlen, int read_fd, char *readbuf, ssize_t buflen)
 {
-    // printf("%s\n", cmd);
-    if (write(write_fd, cmd, strlen(cmd)) < 0)
+    if (write(write_fd, cmd, cmdlen) < 0)
     {
         perror("Unable to write to the child process\n");
     }
+
+    usleep(1000);
+    if (buflen > 0)
+    {
+        if (read(read_fd, readbuf, buflen) < 0)
+        {
+            perror("Unable to read from the child process\n");
+        }
+    }
+
     return 0;
 }
 
-// int ngspice_to_c(int read_fd, char *readbuf, ssize_t buflen)
-// {
-//     if (read(read_fd, readbuf, buflen) < 0)
-//     {
-//         perror("Unable to read from child process\n");
-//     }
-//     else
-//     {
-//         printf("READ : %s\n", readbuf);
-//     }
-
-//     return 0;
-// }
-
-int ngspice_to_c(int read_fd)
+double get_objective(char *buf, ssize_t buflen)
 {
-    char buf[256];
-    memset(buf, 0, 256);
-    printf("LEN: %ld\n", strlen(buf));
-    if (read(read_fd, buf, strlen(buf)) < 0)
+    int last_whitespace = 0;
+    for (int i = 0; i < buflen; i++)
     {
-        perror("Unable to read from child process\n");
-    }
-    else
-    {
-        printf("READ: %s\n", buf);
+        if (buf[i] == ' ')
+        {
+            last_whitespace = i;
+        }
     }
 
-    return 0;
+    char* data;
+    data = malloc(buflen - 1 - last_whitespace);
+    strncpy(data, buf + (last_whitespace + 1), buflen - 1 - last_whitespace);
+
+    double objective = atof(data);
+    return 0;   
 }
 
 int pso_main(int num_particles, int n_pso, int print_freq, int read_fd, int write_fd)
 {
+    unsigned int seed = 1;
+    srand(seed);
+
     particle *particles;
     particles = malloc(num_particles * sizeof(particle));
 
@@ -98,9 +98,6 @@ int pso_main(int num_particles, int n_pso, int print_freq, int read_fd, int writ
         p_min[i] = 0.0;
         p_max[i] = 8.0;
     }
-
-    unsigned int seed = 1;
-    srand(seed);
 
     // Randomly initialise particle positions and velocities
     for (int i = 0; i < num_particles; i++)
@@ -162,28 +159,20 @@ int pso_main(int num_particles, int n_pso, int print_freq, int read_fd, int writ
             strcat(cmd, r2_string);
             strcat(cmd, k_cmd);
 
-            // char buf[256];
-            // memset(buf, 0, 256);
-            c_to_ngspice(write_fd, cmd, strlen(cmd));
-            // printf("alter r2: %s\n", buf);
+            // printf("%d %d %s\n", iter, i, cmd);
+            ngspice_transact(write_fd, cmd, strlen(cmd), read_fd, NULL, 0);
+
+            char readbuf[256];
+            memset(readbuf, 0, 256);
 
             cmd = "op\n";
-            c_to_ngspice(write_fd, cmd, strlen(cmd));
-            // printf("op: %s\n", buf);
+            ngspice_transact(write_fd, cmd, strlen(cmd), read_fd, readbuf, sizeof(readbuf));
 
+            memset(readbuf, 0, 256);
             cmd = "print -i(vdd)*v(2)\n";
-            c_to_ngspice(write_fd, cmd, strlen(cmd));
-            // printf("print: %s\n", buf);
+            ngspice_transact(write_fd, cmd, strlen(cmd), read_fd, readbuf, sizeof(readbuf));
 
-            ngspice_to_c(read_fd);
-            // ngspice_to_c(read_fd, buf, strlen(buf));
-            // printf("after ngspice_to_c: %s\n", buf);
-
-            // printf("%d %d\n", iter, i);
-
-            /**
-             * /TODO : fitness = extract_from_response()
-             */
+            particles[i].fitness = get_objective(readbuf, strlen(readbuf));
 
             // Find gbest
             double current_fitness = particles[i].fitness;
@@ -247,7 +236,6 @@ int pso_main(int num_particles, int n_pso, int print_freq, int read_fd, int writ
     return 0;
 }
 
-// minimise f(x,y) = sin x * cos y + 0.25*x using PSO.
 int main(int argc, char **argv)
 {
     int num_particles = 20;
@@ -313,13 +301,16 @@ int main(int argc, char **argv)
         close(CHILD_WRITE);
         close(CHILD_READ);
 
+        char init_msg[256];
+        memset(init_msg, 0, 256);
+
         char *netlist_cmd = "test.cir\n";
-        c_to_ngspice(PARENT_WRITE, netlist_cmd, strlen(netlist_cmd));
+        ngspice_transact(PARENT_WRITE, netlist_cmd, strlen(netlist_cmd), PARENT_READ, init_msg, sizeof(init_msg));
 
         pso_main(num_particles, n_pso, print_freq, PARENT_READ, PARENT_WRITE);
 
         char *exit_cmd = "exit\n";
-        c_to_ngspice(PARENT_WRITE, exit_cmd, strlen(exit_cmd));
+        ngspice_transact(PARENT_WRITE, exit_cmd, strlen(exit_cmd), PARENT_READ, NULL, 0);
 
         wait(NULL);
     }

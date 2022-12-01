@@ -1,0 +1,7 @@
+Netlist 
+
+vdd 1 0 5
+r1 1 2 1k
+r2 2 0 1k
+
+.end
