@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <string.h>
-#include <pthread.h>
 #include <math.h>
 
 #define PI acos(-1.0)
