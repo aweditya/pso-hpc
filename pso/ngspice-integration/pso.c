@@ -69,7 +69,7 @@ double get_objective(char *buf, ssize_t buflen)
     strncpy(data, buf + (last_whitespace + 1), 12);
 
     double objective = atof(data);
-    printf("%s %lf\n", buf, objective);
+    // printf("%s %lf\n", buf, objective);
     return objective;   
 }
 
@@ -227,7 +227,7 @@ int pso_main(int num_particles, int n_pso, int print_freq, int read_fd, int writ
             }
         }
 
-        printf("%lf\n", overall_best_fit);
+        // printf("%lf\n", overall_best_fit);
     }
 
     fclose(fp);
