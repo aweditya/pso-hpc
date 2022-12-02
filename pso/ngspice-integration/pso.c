@@ -65,11 +65,12 @@ double get_objective(char *buf, ssize_t buflen)
     }
 
     char* data;
-    data = malloc(buflen - 1 - last_whitespace);
-    strncpy(data, buf + (last_whitespace + 1), buflen - 1 - last_whitespace);
+    data = malloc(12);
+    strncpy(data, buf + (last_whitespace + 1), 12);
 
     double objective = atof(data);
-    return 0;   
+    printf("%s %lf\n", buf, objective);
+    return objective;   
 }
 
 int pso_main(int num_particles, int n_pso, int print_freq, int read_fd, int write_fd)
@@ -159,7 +160,6 @@ int pso_main(int num_particles, int n_pso, int print_freq, int read_fd, int writ
             strcat(cmd, r2_string);
             strcat(cmd, k_cmd);
 
-            // printf("%d %d %s\n", iter, i, cmd);
             ngspice_transact(write_fd, cmd, strlen(cmd), read_fd, NULL, 0);
 
             char readbuf[256];
@@ -169,7 +169,7 @@ int pso_main(int num_particles, int n_pso, int print_freq, int read_fd, int writ
             ngspice_transact(write_fd, cmd, strlen(cmd), read_fd, readbuf, sizeof(readbuf));
 
             memset(readbuf, 0, 256);
-            cmd = "print -i(vdd)*v(2)\n";
+            cmd = "print i(vdd)*v(2)\n";
             ngspice_transact(write_fd, cmd, strlen(cmd), read_fd, readbuf, sizeof(readbuf));
 
             particles[i].fitness = get_objective(readbuf, strlen(readbuf));
@@ -181,6 +181,7 @@ int pso_main(int num_particles, int n_pso, int print_freq, int read_fd, int writ
                 overall_best_fit = current_fitness;
                 index_gbest = i;
             }
+            // printf("BEST: %lf\n", overall_best_position.coordinate[0]);
         }
 
         for (int j = 0; j < DIM; j++)
@@ -225,6 +226,8 @@ int pso_main(int num_particles, int n_pso, int print_freq, int read_fd, int writ
                 }
             }
         }
+
+        printf("%lf\n", overall_best_fit);
     }
 
     fclose(fp);
