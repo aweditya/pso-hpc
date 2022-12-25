@@ -24,7 +24,42 @@ typedef struct _particle
     double best_fit;
 } particle_t;
 
+/******* Logging and Tracing *************/
+FILE *journal = NULL;
+
+void trace_init()
+{
+    journal = fopen("pso_trace.txt", "w");
+}
+
+void trace_deinit()
+{
+    if (NULL != journal)
+        fclose(journal);
+}
+
+void trace_write(char *cmd, ssize_t cmdlen)
+{
+    if (NULL != journal)
+    {
+        if (cmdlen <= 0)
+            cmd = NULL;
+        fprintf(journal, "PSO>%s\n", cmd);
+    }
+}
+
+void trace_read(char *cmd, ssize_t cmdlen)
+{
+    if (NULL != journal)
+    {
+        if (cmdlen <= 0)
+            cmd = NULL;
+        fprintf(journal, "NGS>%s\n", cmd);
+    }
+}
+
 /********** Global Variables *************/
+
 double p_min[DIM]; // Lower bound of particle space
 double p_max[DIM]; // Upper bound of particle space
 double w = 0.4;    // Inertial weight
@@ -47,7 +82,8 @@ int ngspice_transact(int write_fd, char *cmd, ssize_t cmdlen, int read_fd, char 
     usleep(1000);
     if (buflen > 0)
     {
-        if (read(read_fd, readbuf, buflen) < 0)
+        ssize_t nread = read(read_fd, readbuf, buflen);
+        if (nread < 0)
         {
             perror("Unable to read from the child process\n");
         }
@@ -56,26 +92,30 @@ int ngspice_transact(int write_fd, char *cmd, ssize_t cmdlen, int read_fd, char 
     return 0;
 }
 
-double get_objective(char *buf, ssize_t buflen)
+int get_objective(char *buf, ssize_t buflen, double *objective)
 {
-    int last_whitespace = 0;
-    for (int i = 0; i < buflen; i++)
+    char *result = strstr(buf, " = ");
+    int retval = -1;
+    if (NULL != result)
     {
-        if (buf[i] == ' ')
+        result += strlen(" = ");
+        char *end_of_value = strstr(result, "\n");
+        if (NULL != end_of_value)
         {
-            last_whitespace = i;
+            *end_of_value = '\0';
+            char data[32] = {};
+            strncpy(data, result, strlen(result));
+            *objective = atof(data);
+            retval = 0;
+        }
+        else
+        {
+            perror("Unexpected end of value\n");
         }
     }
-
-    char* data;
-    data = malloc(12);
-    strncpy(data, buf + (last_whitespace + 1), 12);
-
-    double objective = atof(data);
     // printf("%s %lf\n", buf, objective);
-    return objective;   
+    return retval;
 }
-
 
 void init_particles(particle_t *particles, int num_particles, unsigned int *seeds)
 {
@@ -138,7 +178,7 @@ void close_stats(FILE *fp_avg, FILE *fp_snap)
 
 void find_overall_best_fit(particle_t *particles, int num_particles, double *overall_best_fit, int *index_gbest, int read_fd, int write_fd)
 {
-// #pragma omp parallel for
+    // #pragma omp parallel for
     for (int i = 0; i < num_particles; i++)
     {
         // Compute fitness
@@ -167,14 +207,16 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
         ngspice_transact(write_fd, cmd, strlen(cmd), read_fd, readbuf, sizeof(readbuf));
 
         // Compute fitness
-        double x = particles[i].position.coordinate[0], y = particles[i].position.coordinate[1];
-        particles[i].fitness = get_objective(readbuf, strlen(readbuf));
+        double current_fitness = 0;
+        if (get_objective(readbuf, strlen(readbuf), &current_fitness) == 0)
+        {
+            particles[i].fitness = current_fitness;
+        }
 
         // Find best fitness
-        double current_fitness = particles[i].fitness;
         if (current_fitness < *overall_best_fit)
         {
-// #pragma omp critical
+            // #pragma omp critical
             {
                 *overall_best_fit = particles[*index_gbest].fitness;
                 if (current_fitness < *overall_best_fit)
@@ -306,7 +348,7 @@ int main(int argc, char **argv)
         print_stats = atoi(argv[3]);
         print_freq = atoi(argv[4]);
     }
-    
+
     int pid;
     /* pipefd1: master -> child
      * pipefd1[0] is the read end
