@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
 #include <string.h>
-#include <math.h>
 #include "sharedspice.h"
 
 #define PI acos(-1.0)
