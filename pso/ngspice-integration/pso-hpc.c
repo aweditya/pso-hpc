@@ -74,12 +74,13 @@ double drand(const double low, const double high, unsigned int *seed)
 
 int ngspice_transact(int write_fd, char *cmd, ssize_t cmdlen, int read_fd, char *readbuf, ssize_t buflen)
 {
+    trace_write(cmd, cmdlen);
     if (write(write_fd, cmd, cmdlen) < 0)
     {
         perror("Unable to write to the child process\n");
     }
 
-    usleep(1000);
+    usleep(400);
     if (buflen > 0)
     {
         ssize_t nread = read(read_fd, readbuf, buflen);
@@ -88,6 +89,8 @@ int ngspice_transact(int write_fd, char *cmd, ssize_t cmdlen, int read_fd, char 
             perror("Unable to read from the child process\n");
         }
     }
+
+    trace_read(readbuf, buflen);
 
     return 0;
 }
@@ -341,6 +344,8 @@ int main(int argc, char **argv)
     int print_stats = 0; // Dump stats or not
     int print_freq = 4;  // Print frequency
 
+    trace_init();
+
     if (argc == 5)
     {
         num_particles = atoi(argv[1]);
@@ -415,5 +420,6 @@ int main(int argc, char **argv)
         wait(NULL);
     }
 
+    trace_deinit();
     return 0;
 }
