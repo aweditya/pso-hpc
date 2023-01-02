@@ -1,0 +1,7 @@
+RC Transient Simulation
+
+vdd 1 0 pulse(0 5 0 1u 1u 5s 10s)
+c 1 2 100u
+r 2 0 1k
+
+.end
