@@ -276,7 +276,7 @@ int main(int argc, char **argv)
 
     ngSpice_Init(ng_getchar, NULL, NULL, NULL, NULL, NULL, NULL);
 
-    char netlist_cmd[32] = "test.cir\n";
+    char netlist_cmd[32] = "mptt.cir\n";
     ngSpice_Command(netlist_cmd);
     state = 1;
 
