@@ -5,7 +5,7 @@
 #include "sharedspice.h"
 
 #define PI acos(-1.0)
-#define DIM 6
+#define DIM 4
 
 /********** Type Definitions *************/
 typedef struct _point
@@ -117,7 +117,7 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
         double mn_w, mp_w;
         for (int j = 0; j < DIM; j++)
         {
-            snprintf(index_string, 2, "%d", (j + 1));
+            snprintf(index_string, 2, "%d", (j + 2));
 
             mn_w = particles[i].position.coordinate[j];
             mp_w = 2 * mn_w;
@@ -125,17 +125,19 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
             snprintf(mp_w_string, 10, "%lf", mp_w);
 
             memset(alter_cmd, 0, sizeof(alter_cmd));
-            strcpy(alter_cmd, "alter mn");
+            strcpy(alter_cmd, "alter @mn");
             strcat(alter_cmd, index_string);
-            strcat(alter_cmd, " w ");
+            strcat(alter_cmd, "[w]= ");
             strcat(alter_cmd, mn_w_string);
+            ngSpice_Command(alter_cmd);
 
             memset(alter_cmd, 0, sizeof(alter_cmd));
-            strcpy(alter_cmd, "alter mp");
+            strcpy(alter_cmd, "alter @mp");
             strcat(alter_cmd, index_string);
-            strcat(alter_cmd, " w ");
+            strcat(alter_cmd, "[w]= ");
             strcat(alter_cmd, mp_w_string);
-        } 
+            ngSpice_Command(alter_cmd);
+        }
         state = 2;
 
         char cmd[128] = "tran 10p 20n 0 10p\n";
@@ -143,11 +145,11 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
         state = 3;
 
         memset(cmd, 0, sizeof(cmd));
-        strcpy(cmd, "meas tran fall_time trig v(out7) val=0.9 fall=1 targ v(out7) val=0.1 fall=1\n");
+        strcpy(cmd, "meas tran fall_time trig v(in) val=0.5 rise=1 targ v(out5) val=0.5 fall=1\n");
         ngSpice_Command(cmd);
 
         memset(cmd, 0, sizeof(cmd));
-        strcpy(cmd, "meas tran rise_time trig v(out7) val=0.1 rise=1 targ v(out7) val=0.9 rise=1\n");        
+        strcpy(cmd, "meas tran rise_time trig v(in) val=0.5 fall=1 targ v(out5) val=0.5 rise=1\n");
         ngSpice_Command(cmd);
 
         memset(cmd, 0, sizeof(cmd));
@@ -262,6 +264,8 @@ int pso_main(int num_particles, int n_pso, int print_freq, int print_stats)
         process_particle(particles, num_particles, overall_best_position, seeds);
     }
 
+    printf("Overall Best Fit: %11.4e\n", overall_best_fit);
+
     // printf("Execution time: %lf\n", omp_get_wtime() - now);
 
     if (print_stats)
@@ -302,7 +306,7 @@ int main(int argc, char **argv)
 
     ngSpice_Init(ng_getchar, NULL, NULL, NULL, NULL, NULL, NULL);
 
-    char netlist_cmd[32] = "mos_buffer7y.cir\n";
+    char netlist_cmd[32] = "mos_buffer5y.cir\n";
     ngSpice_Command(netlist_cmd);
     state = 1;
 
