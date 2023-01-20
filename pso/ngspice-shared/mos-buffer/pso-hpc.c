@@ -109,6 +109,9 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
     for (int i = 0; i < num_particles; i++)
     {
         // Compute fitness
+        char reset_cmd[8] = "reset\n";
+        ngSpice_Command(reset_cmd);
+
         char index_string[10];
         char alter_cmd[32];
         char mn_w_string[10];
@@ -129,6 +132,7 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
             strcat(alter_cmd, index_string);
             strcat(alter_cmd, "[w]= ");
             strcat(alter_cmd, mn_w_string);
+            printf("%s\n", alter_cmd);
             ngSpice_Command(alter_cmd);
 
             memset(alter_cmd, 0, sizeof(alter_cmd));
@@ -136,6 +140,7 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
             strcat(alter_cmd, index_string);
             strcat(alter_cmd, "[w]= ");
             strcat(alter_cmd, mp_w_string);
+            printf("%s\n", alter_cmd);
             ngSpice_Command(alter_cmd);
         }
         state = 2;
