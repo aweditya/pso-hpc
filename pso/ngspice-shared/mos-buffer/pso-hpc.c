@@ -132,7 +132,7 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
             strcat(alter_cmd, index_string);
             strcat(alter_cmd, "[w]= ");
             strcat(alter_cmd, mn_w_string);
-            printf("%s\n", alter_cmd);
+            // printf("%s\n", alter_cmd);
             ngSpice_Command(alter_cmd);
 
             memset(alter_cmd, 0, sizeof(alter_cmd));
@@ -140,29 +140,27 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
             strcat(alter_cmd, index_string);
             strcat(alter_cmd, "[w]= ");
             strcat(alter_cmd, mp_w_string);
-            printf("%s\n", alter_cmd);
+            // printf("%s\n", alter_cmd);
             ngSpice_Command(alter_cmd);
         }
         state = 2;
 
-        char cmd[128] = "tran 10p 20n 0 10p\n";
+        char cmd[128] = "tran 10p 40n 0 10p\n";
         ngSpice_Command(cmd);
         state = 3;
 
         memset(cmd, 0, sizeof(cmd));
-        strcpy(cmd, "meas tran fall_time trig v(in) val=0.5 rise=1 targ v(out5) val=0.5 fall=1\n");
+        strcpy(cmd, "meas tran energy integ i(vdd) from=0.5n to=30.5n\n");
         ngSpice_Command(cmd);
 
         memset(cmd, 0, sizeof(cmd));
-        strcpy(cmd, "meas tran rise_time trig v(in) val=0.5 fall=1 targ v(out5) val=0.5 rise=1\n");
-        ngSpice_Command(cmd);
-
-        memset(cmd, 0, sizeof(cmd));
-        strcpy(cmd, "print fall_time+rise_time\n");
+        strcpy(cmd, "print energy\n");
         ngSpice_Command(cmd);
         state = 1;
 
         // Find gbest
+        current_fitness *= -1;
+        // printf("%11.4e\n", current_fitness);
         particles[i].fitness = current_fitness;
         if (current_fitness < *overall_best_fit)
         {
