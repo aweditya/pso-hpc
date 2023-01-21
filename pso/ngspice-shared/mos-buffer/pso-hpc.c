@@ -150,16 +150,20 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
         state = 3;
 
         memset(cmd, 0, sizeof(cmd));
-        strcpy(cmd, "meas tran energy integ i(vdd) from=0.5n to=30.5n\n");
+        strcpy(cmd, "meas tran rise_time trig v(in) val=0.5 fall=1 targ v(out5) val=0.5 rise=1\n");
         ngSpice_Command(cmd);
 
         memset(cmd, 0, sizeof(cmd));
-        strcpy(cmd, "print energy\n");
+        strcpy(cmd, "meas tran fall_time trig v(in) val=0.5 rise=1 targ v(out5) val=0.5 fall=1\n");
+        ngSpice_Command(cmd);
+        
+        memset(cmd, 0, sizeof(cmd));
+        strcpy(cmd, "print rise_time+fall_time\n");
         ngSpice_Command(cmd);
         state = 1;
 
         // Find gbest
-        current_fitness *= -1;
+        // current_fitness *= -1;
         // printf("%11.4e\n", current_fitness);
         particles[i].fitness = current_fitness;
         if (current_fitness < *overall_best_fit)
@@ -285,8 +289,15 @@ int ng_getchar(char *outputreturn, int ident, void *userdata)
     if (state == 3)
     {
         char *result = strstr(outputreturn, " = ");
-        result += strlen(" = ");
-        current_fitness = atof(result);
+        if (result != NULL)
+        {
+            result += strlen(" = ");
+            current_fitness = atof(result);
+        }
+        else
+        {
+            current_fitness = __DBL_MAX__;
+        }
     }
 
     return 0;
