@@ -139,7 +139,7 @@ void find_overall_best_fit(particle_t *particles, double *overall_best_fit, int 
             strcat(alter_cmd, index_string);
             strcat(alter_cmd, "[w]= ");
             strcat(alter_cmd, mn_w_string);
-            // printf("%s\n", alter_cmd);
+            printf("%s\n", alter_cmd);
             ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(alter_cmd);
 
             memset(alter_cmd, 0, sizeof(alter_cmd));
@@ -147,7 +147,7 @@ void find_overall_best_fit(particle_t *particles, double *overall_best_fit, int 
             strcat(alter_cmd, index_string);
             strcat(alter_cmd, "[w]= ");
             strcat(alter_cmd, mp_w_string);
-            // printf("%s\n", alter_cmd);
+            printf("%s\n", alter_cmd);
             ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(alter_cmd);
         }
         state[i] = 2;
@@ -169,9 +169,10 @@ void find_overall_best_fit(particle_t *particles, double *overall_best_fit, int 
         ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(cmd);
         state[i] = 1;
 
+        particles[i].fitness = current_fitness;
+
 #pragma omp critical
         // Find gbest
-        particles[i].fitness = current_fitness;
         if (current_fitness < *overall_best_fit)
         {
             *overall_best_fit = current_fitness;
@@ -287,6 +288,7 @@ int pso_main(int n_pso, int print_freq, int print_stats)
 
 int ng_getchar(char *outputreturn, int ident, void *userdata)
 {
+    printf("LIB: %d, OUT: %s\n", ident, outputreturn);
     if (state[ident] == 3)
     {
         char *result = strstr(outputreturn, " = ");
@@ -299,6 +301,8 @@ int ng_getchar(char *outputreturn, int ident, void *userdata)
         {
             current_fitness = __DBL_MAX__;
         }
+        
+        printf("OBJ: %11.4e\n", current_fitness);
     }
 
     return 0;
@@ -314,9 +318,9 @@ int main(int argc, char **argv)
 
     if (argc == 4)
     {
-        n_pso = atoi(argv[2]);
-        print_stats = atoi(argv[3]);
-        print_freq = atoi(argv[4]);
+        n_pso = atoi(argv[1]);
+        print_stats = atoi(argv[2]);
+        print_freq = atoi(argv[3]);
     }
 
     char *errmsg = NULL;
