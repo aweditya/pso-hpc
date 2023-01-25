@@ -152,7 +152,7 @@ void find_overall_best_fit(particle_t *particles, double *overall_best_fit, int 
         }
         state[i] = 2;
 
-        char cmd[128] = "tran 10p 20n 0 10p\n";
+        char cmd[128] = "tran 10p 40n 0 10p\n";
         ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(cmd);
         state[i] = 3;
 
@@ -322,7 +322,6 @@ int main(int argc, char **argv)
     char *errmsg = NULL;
     char loadstring[32], index_string[4];
     void * ngdllhandles[NUM_PARTICLES];
-#pragma omp parallel for
     for (int i = 0; i < NUM_PARTICLES; i++)
     {
         snprintf(index_string, 2, "%d", (i + 1));
