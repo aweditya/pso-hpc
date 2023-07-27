@@ -42,7 +42,7 @@ int pso_main(int num_particles, int n_pso, int print_freq)
     srand(seed);
 
     particle *particles;
-    particles = malloc(num_particles * sizeof(particle));
+    particles = (particle *)malloc(num_particles * sizeof(particle));
 
     point overall_best_position; // Coordinates of overall best
     double overall_best_fit;     // Overall best

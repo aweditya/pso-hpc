@@ -329,7 +329,6 @@ int main(int argc, char **argv)
         sprintf(loadstring, "bin/libngspice%d.so", i + 1);
 
         ngdllhandles[i] = dlopen(loadstring, RTLD_NOW);
-        printf("%p\n", ngdllhandles[i]);
         errmsg = dlerror();
         if (errmsg)
         {

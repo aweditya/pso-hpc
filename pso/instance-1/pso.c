@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     }
 
     particle *particles;
-    particles = malloc(num_particles * sizeof(particle));
+    particles = (particle *)malloc(num_particles * sizeof(particle));
 
     point overall_best_position; // Coordinates of overall best
     double overall_best_fit;     // Overall best

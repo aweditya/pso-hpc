@@ -100,7 +100,7 @@ void close_stats(FILE *fp_avg, FILE *fp_snap)
  * 1: alter command
  * 2: tran command
  * 3: print command
-*/
+ */
 int state = 0;
 double current_fitness;
 
@@ -156,7 +156,7 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
         memset(cmd, 0, sizeof(cmd));
         strcpy(cmd, "meas tran fall_time trig v(in) val=0.5 rise=1 targ v(out5) val=0.5 fall=1\n");
         ngSpice_Command(cmd);
-        
+
         memset(cmd, 0, sizeof(cmd));
         strcpy(cmd, "print rise_time+fall_time\n");
         ngSpice_Command(cmd);
@@ -222,14 +222,14 @@ int pso_main(int num_particles, int n_pso, int print_freq, int print_stats)
 
     // Create an array of seeds, one for each thread
     unsigned int *seeds;
-    seeds = malloc(num_particles * sizeof(unsigned int));
+    seeds = (unsigned int *)malloc(num_particles * sizeof(unsigned int));
     for (int i = 0; i < num_particles; i++)
     {
         seeds[i] = rand();
     }
 
     particle_t *particles;
-    particles = malloc(num_particles * sizeof(particle_t));
+    particles = (particle_t *)malloc(num_particles * sizeof(particle_t));
 
     point_t overall_best_position; // Coordinates of overall best
     double overall_best_fit;       // Overall best
@@ -305,7 +305,7 @@ int ng_getchar(char *outputreturn, int ident, void *userdata)
 
 int main(int argc, char **argv)
 {
-    int num_particles = 20;
+    int num_particles = 8;
     int n_pso = 20;      // Number of updates
     int print_stats = 0; // Dump stats or not
     int print_freq = 4;  // Print frequency
