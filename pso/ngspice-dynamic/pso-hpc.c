@@ -134,19 +134,11 @@ void find_overall_best_fit(particle_t *particles, double *overall_best_fit, int 
             snprintf(mn_w_string, 10, "%lf", mn_w);
             snprintf(mp_w_string, 10, "%lf", mp_w);
 
-            memset(alter_cmd, 0, sizeof(alter_cmd));
-            strcpy(alter_cmd, "alter @mn");
-            strcat(alter_cmd, index_string);
-            strcat(alter_cmd, "[w]= ");
-            strcat(alter_cmd, mn_w_string);
+            snprintf(alter_cmd, 32, "alter @mn%s[w]=%s", index_string, mn_w_string);
             // printf("%s\n", alter_cmd);
             ret = ((int *(*)(char *))ngSpice_Command_handles[i])(alter_cmd);
 
-            memset(alter_cmd, 0, sizeof(alter_cmd));
-            strcpy(alter_cmd, "alter @mp");
-            strcat(alter_cmd, index_string);
-            strcat(alter_cmd, "[w]= ");
-            strcat(alter_cmd, mp_w_string);
+            snprintf(alter_cmd, 32, "alter @mp%s[w]=%s", index_string, mp_w_string);
             // printf("%s\n", alter_cmd);
             ret = ((int *(*)(char *))ngSpice_Command_handles[i])(alter_cmd);
         }
