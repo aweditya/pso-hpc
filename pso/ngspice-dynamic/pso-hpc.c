@@ -36,7 +36,7 @@ int state[NUM_PARTICLES], thread_id[NUM_PARTICLES];
 int *ret;
 double current_fitness;
 
-typedef void * funptr_t;
+typedef void *funptr_t;
 funptr_t ngSpice_Init_handles[NUM_PARTICLES], ngSpice_Init_Sync_handles[NUM_PARTICLES], ngSpice_Command_handles[NUM_PARTICLES];
 
 /********** Functions  *************/
@@ -109,14 +109,14 @@ void close_stats(FILE *fp_avg, FILE *fp_snap)
  * 1: alter command
  * 2: tran command
  * 3: print command
-*/
+ */
 void find_overall_best_fit(particle_t *particles, double *overall_best_fit, int *index_gbest)
 {
 #pragma omp parallel for
     for (int i = 0; i < NUM_PARTICLES; i++)
     {
         char reset_cmd[8] = "reset\n";
-        ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(reset_cmd);
+        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(reset_cmd);
 
         // Compute fitness
         char index_string[10];
@@ -139,34 +139,34 @@ void find_overall_best_fit(particle_t *particles, double *overall_best_fit, int 
             strcat(alter_cmd, index_string);
             strcat(alter_cmd, "[w]= ");
             strcat(alter_cmd, mn_w_string);
-            printf("%s\n", alter_cmd);
-            ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(alter_cmd);
+            // printf("%s\n", alter_cmd);
+            ret = ((int *(*)(char *))ngSpice_Command_handles[i])(alter_cmd);
 
             memset(alter_cmd, 0, sizeof(alter_cmd));
             strcpy(alter_cmd, "alter @mp");
             strcat(alter_cmd, index_string);
             strcat(alter_cmd, "[w]= ");
             strcat(alter_cmd, mp_w_string);
-            printf("%s\n", alter_cmd);
-            ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(alter_cmd);
+            // printf("%s\n", alter_cmd);
+            ret = ((int *(*)(char *))ngSpice_Command_handles[i])(alter_cmd);
         }
         state[i] = 2;
 
         char cmd[128] = "tran 10p 40n 0 10p\n";
-        ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(cmd);
+        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(cmd);
         state[i] = 3;
 
         memset(cmd, 0, sizeof(cmd));
         strcpy(cmd, "meas tran fall_time trig v(in) val=0.5 rise=1 targ v(out5) val=0.5 fall=1\n");
-        ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(cmd);
+        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(cmd);
 
         memset(cmd, 0, sizeof(cmd));
         strcpy(cmd, "meas tran rise_time trig v(in) val=0.5 fall=1 targ v(out5) val=0.5 rise=1\n");
-        ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(cmd);
+        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(cmd);
 
         memset(cmd, 0, sizeof(cmd));
         strcpy(cmd, "print fall_time+rise_time\n");
-        ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(cmd);
+        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(cmd);
         state[i] = 1;
 
         particles[i].fitness = current_fitness;
@@ -288,7 +288,7 @@ int pso_main(int n_pso, int print_freq, int print_stats)
 
 int ng_getchar(char *outputreturn, int ident, void *userdata)
 {
-    printf("LIB: %d, OUT: %s\n", ident, outputreturn);
+    // printf("LIB: %d, OUT: %s\n", ident, outputreturn);
     if (state[ident] == 3)
     {
         char *result = strstr(outputreturn, " = ");
@@ -301,8 +301,6 @@ int ng_getchar(char *outputreturn, int ident, void *userdata)
         {
             current_fitness = __DBL_MAX__;
         }
-        
-        printf("OBJ: %11.4e\n", current_fitness);
     }
 
     return 0;
@@ -325,29 +323,21 @@ int main(int argc, char **argv)
 
     char *errmsg = NULL;
     char loadstring[32], index_string[4];
-    void * ngdllhandles[NUM_PARTICLES];
+    void *ngdllhandles[NUM_PARTICLES];
     for (int i = 0; i < NUM_PARTICLES; i++)
     {
-        snprintf(index_string, 2, "%d", (i + 1));
-        memset(loadstring, 0, sizeof(loadstring));
-        strcpy(loadstring, "bin/libngspice");
-        strcat(loadstring, index_string);
-        strcat(loadstring, ".so");
+        sprintf(loadstring, "bin/libngspice%d.so", i + 1);
 
         ngdllhandles[i] = dlopen(loadstring, RTLD_NOW);
+        printf("%p\n", ngdllhandles[i]);
         errmsg = dlerror();
         if (errmsg)
         {
             printf("%s\n", errmsg);
         }
 
-        if (ngdllhandles[i]) 
+        if (!ngdllhandles[i])
         {
-            printf("%s loaded\n", loadstring);
-        }
-        else
-        {
-            printf("%s not loaded!\n", loadstring);
             exit(1);
         }
 
@@ -372,26 +362,24 @@ int main(int argc, char **argv)
             printf("%s\n", errmsg);
         }
 
-        ret = ((int * (*)(SendChar*, SendStat*, ControlledExit*, SendData*, SendInitData*, 
-                            BGThreadRunning*, void*)) ngSpice_Init_handles[i])(ng_getchar, 
-                                    NULL, NULL, NULL, NULL, NULL, NULL);
+        ret = ((int *(*)(SendChar *, SendStat *, ControlledExit *, SendData *, SendInitData *,
+                         BGThreadRunning *, void *))ngSpice_Init_handles[i])(ng_getchar,
+                                                                             NULL, NULL, NULL, NULL, NULL, NULL);
 
         thread_id[i] = i;
-        ret = ((int * (*)(GetVSRCData*, GetISRCData*, GetSyncData*, int*,
-                      void*)) ngSpice_Init_Sync_handles[i])(NULL, NULL, NULL, &thread_id[i], NULL);
+        ret = ((int *(*)(GetVSRCData *, GetISRCData *, GetSyncData *, int *,
+                         void *))ngSpice_Init_Sync_handles[i])(NULL, NULL, NULL, &thread_id[i], NULL);
 
-        ret = ((int * (*)(char*)) ngSpice_Command_handles[i])(netlist_cmd);
+        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(netlist_cmd);
         state[i] = 1;
     }
 
     pso_main(n_pso, print_freq, print_stats);
 
-// #pragma omp parallel for
-//     for (int i = 0; i < NUM_PARTICLES; i++)
-//     {
-//         printf("%d\n", i);
-//         dlclose(ngdllhandles[i]);
-//     }
+    // for (int i = 0; i < NUM_PARTICLES; i++)
+    // {
+    //     dlclose(ngdllhandles[i]);
+    // }
 
     return 0;
 }
