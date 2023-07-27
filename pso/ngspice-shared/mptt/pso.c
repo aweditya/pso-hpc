@@ -6,14 +6,12 @@
 #define PI acos(-1.0)
 #define DIM 1
 
-struct point
+typedef struct _point
 {
     double coordinate[DIM];
-};
+} point;
 
-typedef struct point point;
-
-struct particle
+typedef struct _particle
 {
     point position;
     double velocity[DIM];
@@ -22,9 +20,7 @@ struct particle
 
     point best_fit_position;
     double best_fit;
-};
-
-typedef struct particle particle;
+} particle;
 
 double drand(const double low, const double high)
 {
@@ -36,7 +32,7 @@ double drand(const double low, const double high)
  * 1: alter command
  * 2: op command
  * 3: print command
-*/
+ */
 int state = 0;
 double current_fitness;
 
@@ -46,7 +42,7 @@ int pso_main(int num_particles, int n_pso, int print_freq)
     srand(seed);
 
     particle *particles;
-    particles = new particle[num_particles];
+    particles = malloc(num_particles * sizeof(particle));
 
     point overall_best_position; // Coordinates of overall best
     double overall_best_fit;     // Overall best
@@ -76,8 +72,8 @@ int pso_main(int num_particles, int n_pso, int print_freq)
             particles[i].position.coordinate[j] = drand(p_min[j], p_max[j]);
             particles[i].velocity[j] = 0.0;
         }
-    } 
-    
+    }
+
     fp = fopen("avg.dat", "w");
     fp1 = fopen("snap.dat", "w");
     for (int iter = 0; iter < n_pso; iter++)
@@ -198,7 +194,7 @@ int pso_main(int num_particles, int n_pso, int print_freq)
     fclose(fp);
     fclose(fp1);
 
-    delete [] particles;
+    free(particles);
 
     return 0;
 }

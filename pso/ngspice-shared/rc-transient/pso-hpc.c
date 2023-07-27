@@ -100,7 +100,7 @@ void close_stats(FILE *fp_avg, FILE *fp_snap)
  * 1: alter command
  * 2: op command
  * 3: print command
-*/
+ */
 int state = 0;
 double current_fitness;
 
@@ -192,14 +192,14 @@ int pso_main(int num_particles, int n_pso, int print_freq, int print_stats)
 
     // Create an array of seeds, one for each thread
     unsigned int *seeds;
-    seeds = new unsigned int[num_particles];
+    seeds = malloc(num_particles * sizeof(unsigned int));
     for (int i = 0; i < num_particles; i++)
     {
         seeds[i] = rand();
     }
 
     particle_t *particles;
-    particles = new particle_t[num_particles];
+    particles = malloc(num_particles * sizeof(particle_t));
 
     point_t overall_best_position; // Coordinates of overall best
     double overall_best_fit;       // Overall best
@@ -242,8 +242,8 @@ int pso_main(int num_particles, int n_pso, int print_freq, int print_stats)
     if (print_stats)
         close_stats(fp_avg, fp_snap);
 
-    delete [] particles;
-    delete [] seeds;
+    free(particles);
+    free(seeds);
 
     return 0;
 }
