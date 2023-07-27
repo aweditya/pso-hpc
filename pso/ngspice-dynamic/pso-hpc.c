@@ -32,9 +32,9 @@ double w = 0.4;    // Inertial weight
 double p1 = 1.0;   // Cognitive coefficient
 double p2 = 1.0;   // Sociological coefficient
 
+particle_t particles[NUM_PARTICLES];
 int state[NUM_PARTICLES], thread_id[NUM_PARTICLES];
 int *ret;
-double current_fitness;
 
 typedef void *funptr_t;
 funptr_t ngSpice_Init_handles[NUM_PARTICLES], ngSpice_Init_Sync_handles[NUM_PARTICLES], ngSpice_Command_handles[NUM_PARTICLES];
@@ -45,7 +45,7 @@ double drand(const double low, const double high, unsigned int *seed)
     return low + (high - low) * (double)rand_r(seed) / (double)RAND_MAX;
 }
 
-void init_particles(particle_t *particles, unsigned int *seeds)
+void init_particles(unsigned int *seeds)
 {
 // Randomly initialise particle positions and velocities
 #pragma omp parallel for
@@ -66,7 +66,7 @@ void init_stats(FILE **fp_avg, FILE **fp_snap)
     *fp_snap = fopen("snap.dat", "w");
 }
 
-void dump_stats(particle_t *particles, int iter, int print_freq, FILE *fp_avg, FILE *fp_snap)
+void dump_stats(int iter, int print_freq, FILE *fp_avg, FILE *fp_snap)
 {
     double sum[DIM], p_avg[DIM];
     // Write snapshot every print_freq iterations
@@ -110,7 +110,7 @@ void close_stats(FILE *fp_avg, FILE *fp_snap)
  * 2: tran command
  * 3: print command
  */
-void find_overall_best_fit(particle_t *particles, double *overall_best_fit, int *index_gbest)
+void find_overall_best_fit(double *overall_best_fit, int *index_gbest)
 {
 #pragma omp parallel for
     for (int i = 0; i < NUM_PARTICLES; i++)
@@ -161,19 +161,17 @@ void find_overall_best_fit(particle_t *particles, double *overall_best_fit, int 
         ret = ((int *(*)(char *))ngSpice_Command_handles[i])(cmd);
         state[i] = 1;
 
-        particles[i].fitness = current_fitness;
-
 #pragma omp critical
         // Find gbest
-        if (current_fitness < *overall_best_fit)
+        if (particles[i].fitness < *overall_best_fit)
         {
-            *overall_best_fit = current_fitness;
+            *overall_best_fit = particles[i].fitness;
             *index_gbest = i;
         }
     }
 }
 
-void process_particle(particle_t *particles, point_t overall_best_position, unsigned int *seeds)
+void process_particle(point_t overall_best_position, unsigned int *seeds)
 {
 #pragma omp parallel for
     for (int i = 0; i < NUM_PARTICLES; i++)
@@ -226,8 +224,6 @@ int pso_main(int n_pso, int print_freq, int print_stats)
         seeds[i] = rand();
     }
 
-    particle_t particles[NUM_PARTICLES];
-
     point_t overall_best_position; // Coordinates of overall best
     double overall_best_fit;       // Overall best
     int index_gbest = 0;           // Index of particle that found the overall best
@@ -242,17 +238,17 @@ int pso_main(int n_pso, int print_freq, int print_stats)
         init_stats(&fp_avg, &fp_snap);
 
     // double now = omp_get_wtime();
-    init_particles(particles, seeds);
+    init_particles(seeds);
 
     for (int iter = 0; iter < n_pso; iter++)
     {
         if (print_stats)
         {
-            dump_stats(particles, iter, print_freq, fp_avg, fp_snap);
+            dump_stats(iter, print_freq, fp_avg, fp_snap);
         }
 
         overall_best_fit = __DBL_MAX__;
-        find_overall_best_fit(particles, &overall_best_fit, &index_gbest);
+        find_overall_best_fit(&overall_best_fit, &index_gbest);
 
         for (int j = 0; j < DIM; j++)
         {
@@ -265,7 +261,7 @@ int pso_main(int n_pso, int print_freq, int print_stats)
         }
         printf("\n");
 
-        process_particle(particles, overall_best_position, seeds);
+        process_particle(overall_best_position, seeds);
     }
 
     printf("Overall Best Fit: %11.4e\n", overall_best_fit);
@@ -287,11 +283,11 @@ int ng_getchar(char *outputreturn, int ident, void *userdata)
         if (result != NULL)
         {
             result += strlen(" = ");
-            current_fitness = atof(result);
+            particles[ident].fitness = atof(result);
         }
         else
         {
-            current_fitness = __DBL_MAX__;
+            particles[ident].fitness = __DBL_MAX__;
         }
     }
 
