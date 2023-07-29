@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <dlfcn.h>
@@ -24,8 +25,11 @@ typedef struct _particle
     double best_fit;
 } particle_t;
 
+typedef void *funptr_t;
+
 /********** Global Variables *************/
 
+/******** PSO hyperparameters **********/
 double p_min[DIM]; // Lower bound of particle space
 double p_max[DIM]; // Upper bound of particle space
 double w = 0.4;    // Inertial weight
@@ -36,7 +40,13 @@ particle_t particles[NUM_PARTICLES];
 int state[NUM_PARTICLES], thread_id[NUM_PARTICLES];
 int *ret;
 
-typedef void *funptr_t;
+/********** NGSpice callbacks ***********/
+SendChar ng_getchar;
+ControlledExit ng_exit;
+
+bool will_unload = false;
+void *ngdllhandles[NUM_PARTICLES];
+
 funptr_t ngSpice_Init_handles[NUM_PARTICLES], ngSpice_Init_Sync_handles[NUM_PARTICLES], ngSpice_Command_handles[NUM_PARTICLES];
 
 /********** Functions  *************/
@@ -117,7 +127,7 @@ void find_overall_best_fit(double *overall_best_fit, int *index_gbest)
     {
         // Compute fitness
         char alter_cmd[32];
-        
+
         double mn_w, mp_w;
         for (int j = 0; j < DIM; j++)
         {
@@ -264,26 +274,6 @@ int pso_main(int n_pso, int print_freq, int print_stats)
     return 0;
 }
 
-int ng_getchar(char *outputreturn, int ident, void *userdata)
-{
-    // printf("LIB: %d, OUT: %s\n", ident, outputreturn);
-    if (state[ident] == 3)
-    {
-        char *result = strstr(outputreturn, " = ");
-        if (result != NULL)
-        {
-            result += strlen(" = ");
-            particles[ident].fitness = atof(result);
-        }
-        else
-        {
-            particles[ident].fitness = __DBL_MAX__;
-        }
-    }
-
-    return 0;
-}
-
 int main(int argc, char **argv)
 {
     char netlist_cmd[32] = "mos_buffer5y.cir\n";
@@ -301,7 +291,6 @@ int main(int argc, char **argv)
 
     char *errmsg = NULL;
     char loadstring[32], index_string[4];
-    void *ngdllhandles[NUM_PARTICLES];
     for (int i = 0; i < NUM_PARTICLES; i++)
     {
         sprintf(loadstring, "bin/libngspice%d.so", i + 1);
@@ -315,6 +304,7 @@ int main(int argc, char **argv)
 
         if (!ngdllhandles[i])
         {
+            fprintf(stderr, "%s not loaded!\n", loadstring);
             exit(1);
         }
 
@@ -341,7 +331,7 @@ int main(int argc, char **argv)
 
         ret = ((int *(*)(SendChar *, SendStat *, ControlledExit *, SendData *, SendInitData *,
                          BGThreadRunning *, void *))ngSpice_Init_handles[i])(ng_getchar,
-                                                                             NULL, NULL, NULL, NULL, NULL, NULL);
+                                                                             NULL, ng_exit, NULL, NULL, NULL, NULL);
 
         thread_id[i] = i;
         ret = ((int *(*)(GetVSRCData *, GetISRCData *, GetSyncData *, int *,
@@ -353,10 +343,50 @@ int main(int argc, char **argv)
 
     pso_main(n_pso, print_freq, print_stats);
 
-    // for (int i = 0; i < NUM_PARTICLES; i++)
-    // {
-    //     dlclose(ngdllhandles[i]);
-    // }
+    for (int i = 0; i < NUM_PARTICLES; i++)
+    {
+        dlclose(ngdllhandles[i]);
+    }
 
     return 0;
+}
+
+int ng_getchar(char *outputreturn, int ident, void *userdata)
+{
+    // printf("LIB: %d, OUT: %s\n", ident, outputreturn);
+    if (state[ident] == 3)
+    {
+        char *result = strstr(outputreturn, " = ");
+        if (result != NULL)
+        {
+            result += strlen(" = ");
+            particles[ident].fitness = atof(result);
+        }
+        else
+        {
+            particles[ident].fitness = __DBL_MAX__;
+        }
+    }
+
+    return 0;
+}
+
+int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void *userdata)
+{
+    if (quitexit)
+    {
+        printf("DNote: Returned quit from library %d with exit status %d\n", ident, exitstatus);
+    }
+    if (immediate)
+    {
+        printf("DNote: Unload ngspice%d\n", ident);
+        dlclose(ngdllhandles[ident]);
+    }
+    else
+    {
+        printf("DNote: Prepare unloading ngspice%d\n", ident);
+        will_unload = true;
+    }
+
+    return exitstatus;
 }
