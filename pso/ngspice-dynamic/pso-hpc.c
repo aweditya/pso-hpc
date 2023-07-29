@@ -115,9 +115,6 @@ void find_overall_best_fit(double *overall_best_fit, int *index_gbest)
 #pragma omp parallel for
     for (int i = 0; i < NUM_PARTICLES; i++)
     {
-        char reset_cmd[8] = "reset\n";
-        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(reset_cmd);
-
         // Compute fitness
         char alter_cmd[32];
         
