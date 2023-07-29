@@ -112,34 +112,19 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
         char reset_cmd[8] = "reset\n";
         ngSpice_Command(reset_cmd);
 
-        char index_string[10];
         char alter_cmd[32];
-        char mn_w_string[10];
-        char mp_w_string[10];
 
         double mn_w, mp_w;
         for (int j = 0; j < DIM; j++)
         {
-            snprintf(index_string, 2, "%d", (j + 2));
-
             mn_w = particles[i].position.coordinate[j];
             mp_w = 2 * mn_w;
-            snprintf(mn_w_string, 10, "%lf", mn_w);
-            snprintf(mp_w_string, 10, "%lf", mp_w);
 
-            memset(alter_cmd, 0, sizeof(alter_cmd));
-            strcpy(alter_cmd, "alter @mn");
-            strcat(alter_cmd, index_string);
-            strcat(alter_cmd, "[w]= ");
-            strcat(alter_cmd, mn_w_string);
+            snprintf(alter_cmd, 32, "alter @mn%d[w]=%lf", j + 2, mn_w);
             // printf("%s\n", alter_cmd);
             ngSpice_Command(alter_cmd);
 
-            memset(alter_cmd, 0, sizeof(alter_cmd));
-            strcpy(alter_cmd, "alter @mp");
-            strcat(alter_cmd, index_string);
-            strcat(alter_cmd, "[w]= ");
-            strcat(alter_cmd, mp_w_string);
+            snprintf(alter_cmd, 32, "alter @mp%d[w]=%lf", j + 2, mp_w);
             // printf("%s\n", alter_cmd);
             ngSpice_Command(alter_cmd);
         }
@@ -163,7 +148,6 @@ void find_overall_best_fit(particle_t *particles, int num_particles, double *ove
         state = 1;
 
         // Find gbest
-        // current_fitness *= -1;
         // printf("%11.4e\n", current_fitness);
         particles[i].fitness = current_fitness;
         if (current_fitness < *overall_best_fit)
@@ -305,7 +289,7 @@ int ng_getchar(char *outputreturn, int ident, void *userdata)
 
 int main(int argc, char **argv)
 {
-    int num_particles = 8;
+    int num_particles = 20;
     int n_pso = 20;      // Number of updates
     int print_stats = 0; // Dump stats or not
     int print_freq = 4;  // Print frequency
