@@ -7,7 +7,7 @@
 
 #define PI acos(-1.0)
 #define DIM 4
-#define NUM_PARTICLES 8
+#define NUM_PARTICLES 20
 
 /********** Type Definitions *************/
 typedef struct _point
@@ -119,26 +119,19 @@ void find_overall_best_fit(double *overall_best_fit, int *index_gbest)
         ret = ((int *(*)(char *))ngSpice_Command_handles[i])(reset_cmd);
 
         // Compute fitness
-        char index_string[10];
         char alter_cmd[32];
-        char mn_w_string[10];
-        char mp_w_string[10];
-
+        
         double mn_w, mp_w;
         for (int j = 0; j < DIM; j++)
         {
-            snprintf(index_string, 2, "%d", (j + 2));
-
             mn_w = particles[i].position.coordinate[j];
             mp_w = 2 * mn_w;
-            snprintf(mn_w_string, 10, "%lf", mn_w);
-            snprintf(mp_w_string, 10, "%lf", mp_w);
 
-            snprintf(alter_cmd, 32, "alter @mn%s[w]=%s", index_string, mn_w_string);
+            snprintf(alter_cmd, 32, "alter @mn%d[w]=%lf", j + 2, mn_w);
             // printf("%s\n", alter_cmd);
             ret = ((int *(*)(char *))ngSpice_Command_handles[i])(alter_cmd);
 
-            snprintf(alter_cmd, 32, "alter @mp%s[w]=%s", index_string, mp_w_string);
+            snprintf(alter_cmd, 32, "alter @mp%d[w]=%lf", j + 2, mp_w);
             // printf("%s\n", alter_cmd);
             ret = ((int *(*)(char *))ngSpice_Command_handles[i])(alter_cmd);
         }
