@@ -79,7 +79,9 @@ void init_particles(unsigned int *seeds)
         particles[i].best_fit = __DBL_MAX__;
         for (int j = 0; j < DIM; j++)
         {
-            particles[i].position.coordinate[j] = drand(g_pso_hyper_params.p_min[j], g_pso_hyper_params.p_max[j], &seeds[i]);
+            particles[i].position.coordinate[j] = drand(g_pso_hyper_params.p_min[j],
+                                                        g_pso_hyper_params.p_max[j],
+                                                        &seeds[i]);
             particles[i].velocity[j] = 0.0;
         }
     }
@@ -282,11 +284,11 @@ int pso_main(int n_pso, int print_freq, int print_stats)
     return 0;
 }
 
-void load_ngspice(int num_instances, char *netlist_cmd)
+void init_ngspice_instances(char *netlist_cmd)
 {
     char *errmsg = NULL;
     char loadstring[32];
-    for (int i = 0; i < num_instances; i++)
+    for (int i = 0; i < NUM_PARTICLES; i++)
     {
         sprintf(loadstring, "bin/libngspice%d.so", i + 1);
 
@@ -334,34 +336,34 @@ void load_ngspice(int num_instances, char *netlist_cmd)
     }
 }
 
+void close_ngspice_instances()
+{
+    for (int i = 0; i < NUM_PARTICLES; i++)
+    {
+        dlclose(ngspice_instances[i].instanceHandle);
+    }
+}
+
 int main(int argc, char **argv)
 {
     char netlist_cmd[32] = "mos_buffer5y.cir\n";
 
     int n_pso = 20;      // Number of updates
-    int mode = 1;        // Decide number of NGSpice instances to spawn
     int print_stats = 0; // Dump stats or not
     int print_freq = 4;  // Print frequency
 
-    int num_instances = NUM_PARTICLES; // Number of NGSpice instances
-
-    if (argc == 5)
+    if (argc == 4)
     {
         n_pso = atoi(argv[1]);
-        mode = atoi(argv[2]);
-        print_stats = atoi(argv[3]);
-        print_freq = atoi(argv[4]);
+        print_stats = atoi(argv[2]);
+        print_freq = atoi(argv[3]);
     }
 
-    num_instances = mode != 0 ? NUM_PARTICLES : 1; // If mode is 0, spawn single NGSpice instance
-    load_ngspice(num_instances, netlist_cmd);
+    init_ngspice_instances(netlist_cmd);
 
     pso_main(n_pso, print_freq, print_stats);
 
-    for (int i = 0; i < NUM_PARTICLES; i++)
-    {
-        dlclose(ngspice_instances[i].instanceHandle);
-    }
+    close_ngspice_instances();
 
     return 0;
 }
