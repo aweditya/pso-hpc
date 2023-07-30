@@ -32,4 +32,4 @@ include_directories(
 add_executable(pso  
     pso-hpc.c)
 
-target_link_libraries(pso dl)
+target_link_libraries(pso dl m)
