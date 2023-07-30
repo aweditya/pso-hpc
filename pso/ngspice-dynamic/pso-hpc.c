@@ -6,7 +6,6 @@
 #include "omp.h"
 #include "sharedspice.h"
 
-#define PI acos(-1.0)
 #define DIM 4
 #define NUM_PARTICLES 20
 
@@ -25,41 +24,45 @@ typedef struct _particle
     double best_fit;
 } particle_t;
 
-typedef void *funptr_t;
-
-/******** PSO hyperparameters **********/
 typedef struct _pso_hyper_params
 {
     double p_min[DIM]; // Lower bound of particle space
     double p_max[DIM]; // Upper bound of particle space
-    double w;    // Inertial weight
-    double p1;   // Cognitive coefficient
-    double p2;   // Sociological coefficient
-} pso_hyper_params_t ;
-
-pso_hyper_params_t g_pso_hyper_params;
+    double w;          // Inertial weight
+    double p1;         // Cognitive coefficient
+    double p2;         // Sociological coefficient
+} pso_hyper_params_t;
 
 // Initialize the structure in one statement
 pso_hyper_params_t g_pso_hyper_params = {
-    .p_min = {0.0, 0.0}, // Initialize p_min array with values
-    .p_max = {0.0, 0.0}, // Initialize p_max array with values
-    .w = 0.4, // Initialize w
-    .p1 = 1.0, // Initialize p1
-    .p2 = 1.0  // Initialize p2
+    .p_min = {1.0, 1.0, 1.0, 1.0},         // Initialize p_min array with values
+    .p_max = {400.0, 400.0, 400.0, 400.0}, // Initialize p_max array with values
+    .w = 0.4,                              // Initialize w
+    .p1 = 1.0,                             // Initialize p1
+    .p2 = 1.0                              // Initialize p2
 };
 
 particle_t particles[NUM_PARTICLES];
-int state[NUM_PARTICLES], thread_id[NUM_PARTICLES];
-int *ret;
+
+int ret;
 
 /********** NGSpice callbacks ***********/
 SendChar ng_getchar;
 ControlledExit ng_exit;
 
 bool will_unload = false;
-void *ngdllhandles[NUM_PARTICLES];
 
-funptr_t ngSpice_Init_handles[NUM_PARTICLES], ngSpice_Init_Sync_handles[NUM_PARTICLES], ngSpice_Command_handles[NUM_PARTICLES];
+typedef struct _c_ngspice_handler
+{
+    void *instanceHandle;
+    int (*Init)(SendChar *, SendStat *, ControlledExit *, SendData *, SendInitData *, BGThreadRunning *, void *);
+    int (*Init_Sync)(GetVSRCData *, GetISRCData *, GetSyncData *, int *, void *);
+    int (*Command)(char *);
+    int state;
+    int thread_id;
+} c_ngspice_handler_t;
+
+c_ngspice_handler_t ngspice_instances[NUM_PARTICLES];
 
 /********** Functions  *************/
 double drand(const double low, const double high, unsigned int *seed)
@@ -147,31 +150,29 @@ void find_overall_best_fit(double *overall_best_fit, int *index_gbest)
             mp_w = 2 * mn_w;
 
             snprintf(alter_cmd, 32, "alter @mn%d[w]=%lf", j + 2, mn_w);
-            // printf("%s\n", alter_cmd);
-            ret = ((int *(*)(char *))ngSpice_Command_handles[i])(alter_cmd);
+            ret = ngspice_instances[i].Command(alter_cmd);
 
             snprintf(alter_cmd, 32, "alter @mp%d[w]=%lf", j + 2, mp_w);
-            // printf("%s\n", alter_cmd);
-            ret = ((int *(*)(char *))ngSpice_Command_handles[i])(alter_cmd);
+            ret = ngspice_instances[i].Command(alter_cmd);
         }
-        state[i] = 2;
+        ngspice_instances[i].state = 2;
 
         char cmd[128] = "tran 10p 40n 0 10p\n";
-        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(cmd);
-        state[i] = 3;
+        ret = ngspice_instances[i].Command(cmd);
+        ngspice_instances[i].state = 3;
 
         memset(cmd, 0, sizeof(cmd));
         strcpy(cmd, "meas tran fall_time trig v(in) val=0.5 rise=1 targ v(out5) val=0.5 fall=1\n");
-        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(cmd);
+        ret = ngspice_instances[i].Command(cmd);
 
         memset(cmd, 0, sizeof(cmd));
         strcpy(cmd, "meas tran rise_time trig v(in) val=0.5 fall=1 targ v(out5) val=0.5 rise=1\n");
-        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(cmd);
+        ret = ngspice_instances[i].Command(cmd);
 
         memset(cmd, 0, sizeof(cmd));
         strcpy(cmd, "print fall_time+rise_time\n");
-        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(cmd);
-        state[i] = 1;
+        ret = ngspice_instances[i].Command(cmd);
+        ngspice_instances[i].state = 1;
 
 #pragma omp critical
         // Find gbest
@@ -203,10 +204,9 @@ void process_particle(point_t overall_best_position, unsigned int *seeds)
             // Update velocities
             double r1 = drand(0.0, 1.0, &seeds[i]);
             double r2 = drand(0.0, 1.0, &seeds[i]);
-            particles[i].velocity[j] = g_pso_hyper_params.w * particles[i].velocity[j] + 
-                                    r1 * g_pso_hyper_params.p1 * (particles[i].best_fit_position.coordinate[j] - 
-                                    particles[i].position.coordinate[j]) +
-                                    r2 * g_pso_hyper_params.p2 * (overall_best_position.coordinate[j] - particles[i].position.coordinate[j]);
+            particles[i].velocity[j] = g_pso_hyper_params.w * particles[i].velocity[j] +
+                                       r1 * g_pso_hyper_params.p1 * (particles[i].best_fit_position.coordinate[j] - particles[i].position.coordinate[j]) +
+                                       r2 * g_pso_hyper_params.p2 * (overall_best_position.coordinate[j] - particles[i].position.coordinate[j]);
 
             // Move the particles
             particles[i].position.coordinate[j] += particles[i].velocity[j];
@@ -282,58 +282,55 @@ int pso_main(int n_pso, int print_freq, int print_stats)
     return 0;
 }
 
-void load_ngspice(char *netlist_cmd)
+void load_ngspice(int num_instances, char *netlist_cmd)
 {
     char *errmsg = NULL;
     char loadstring[32];
-    for (int i = 0; i < NUM_PARTICLES; i++)
+    for (int i = 0; i < num_instances; i++)
     {
         sprintf(loadstring, "bin/libngspice%d.so", i + 1);
 
-        ngdllhandles[i] = dlopen(loadstring, RTLD_NOW);
+        ngspice_instances[i].instanceHandle = dlopen(loadstring, RTLD_NOW);
         errmsg = dlerror();
         if (errmsg)
         {
             printf("%s\n", errmsg);
         }
 
-        if (!ngdllhandles[i])
+        if (!ngspice_instances[i].instanceHandle)
         {
             fprintf(stderr, "%s not loaded!\n", loadstring);
             exit(1);
         }
 
-        ngSpice_Init_handles[i] = dlsym(ngdllhandles[i], "ngSpice_Init");
+        ngspice_instances[i].Init = dlsym(ngspice_instances[i].instanceHandle, "ngSpice_Init");
         errmsg = dlerror();
         if (errmsg)
         {
             printf("%s\n", errmsg);
         }
 
-        ngSpice_Init_Sync_handles[i] = dlsym(ngdllhandles[i], "ngSpice_Init_Sync");
+        ngspice_instances[i].Init_Sync = dlsym(ngspice_instances[i].instanceHandle, "ngSpice_Init_Sync");
         errmsg = dlerror();
         if (errmsg)
         {
             printf("%s\n", errmsg);
         }
 
-        ngSpice_Command_handles[i] = dlsym(ngdllhandles[i], "ngSpice_Command");
+        ngspice_instances[i].Command = dlsym(ngspice_instances[i].instanceHandle, "ngSpice_Command");
         errmsg = dlerror();
         if (errmsg)
         {
             printf("%s\n", errmsg);
         }
 
-        ret = ((int *(*)(SendChar *, SendStat *, ControlledExit *, SendData *, SendInitData *,
-                         BGThreadRunning *, void *))ngSpice_Init_handles[i])(ng_getchar,
-                                                                             NULL, ng_exit, NULL, NULL, NULL, NULL);
+        ret = ngspice_instances[i].Init(ng_getchar, NULL, ng_exit, NULL, NULL, NULL, NULL);
 
-        thread_id[i] = i;
-        ret = ((int *(*)(GetVSRCData *, GetISRCData *, GetSyncData *, int *,
-                         void *))ngSpice_Init_Sync_handles[i])(NULL, NULL, NULL, &thread_id[i], NULL);
+        ngspice_instances[i].thread_id = i;
+        ret = ngspice_instances[i].Init_Sync(NULL, NULL, NULL, &ngspice_instances[i].thread_id, NULL);
 
-        ret = ((int *(*)(char *))ngSpice_Command_handles[i])(netlist_cmd);
-        state[i] = 1;
+        ret = ngspice_instances[i].Command(netlist_cmd);
+        ngspice_instances[i].state = 1;
     }
 }
 
@@ -342,23 +339,28 @@ int main(int argc, char **argv)
     char netlist_cmd[32] = "mos_buffer5y.cir\n";
 
     int n_pso = 20;      // Number of updates
+    int mode = 1;        // Decide number of NGSpice instances to spawn
     int print_stats = 0; // Dump stats or not
     int print_freq = 4;  // Print frequency
 
-    if (argc == 4)
+    int num_instances = NUM_PARTICLES; // Number of NGSpice instances
+
+    if (argc == 5)
     {
         n_pso = atoi(argv[1]);
-        print_stats = atoi(argv[2]);
-        print_freq = atoi(argv[3]);
+        mode = atoi(argv[2]);
+        print_stats = atoi(argv[3]);
+        print_freq = atoi(argv[4]);
     }
 
-    load_ngspice(netlist_cmd);
+    num_instances = mode != 0 ? NUM_PARTICLES : 1; // If mode is 0, spawn single NGSpice instance
+    load_ngspice(num_instances, netlist_cmd);
 
     pso_main(n_pso, print_freq, print_stats);
 
     for (int i = 0; i < NUM_PARTICLES; i++)
     {
-        dlclose(ngdllhandles[i]);
+        dlclose(ngspice_instances[i].instanceHandle);
     }
 
     return 0;
@@ -366,7 +368,7 @@ int main(int argc, char **argv)
 
 int ng_getchar(char *outputreturn, int ident, void *userdata)
 {
-    if (state[ident] == 3)
+    if (ngspice_instances[ident].state == 3)
     {
         char *result = strstr(outputreturn, " = ");
         if (result != NULL)
@@ -392,7 +394,7 @@ int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void *user
     if (immediate)
     {
         printf("DNote: Unload ngspice%d\n", ident);
-        dlclose(ngdllhandles[ident]);
+        dlclose(ngspice_instances[ident].instanceHandle);
     }
     else
     {
