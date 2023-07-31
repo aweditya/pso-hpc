@@ -214,13 +214,13 @@ void process_particle(point_t overall_best_position, unsigned int *seeds)
             particles[i].position.coordinate[j] += particles[i].velocity[j];
 
             // If particles go outside parameter space, put them back in
-            for (int j = 0; j < DIM; j++)
+            for (int k = 0; k < DIM; k++)
             {
-                if (particles[i].position.coordinate[j] < g_pso_hyper_params.p_min[j])
-                    particles[i].position.coordinate[j] = g_pso_hyper_params.p_min[j];
+                if (particles[i].position.coordinate[j] < g_pso_hyper_params.p_min[k])
+                    particles[i].position.coordinate[j] = g_pso_hyper_params.p_min[k];
 
-                if (particles[i].position.coordinate[j] > g_pso_hyper_params.p_max[j])
-                    particles[i].position.coordinate[j] = g_pso_hyper_params.p_max[j];
+                if (particles[i].position.coordinate[j] > g_pso_hyper_params.p_max[k])
+                    particles[i].position.coordinate[j] = g_pso_hyper_params.p_max[k];
             }
         }
     }
