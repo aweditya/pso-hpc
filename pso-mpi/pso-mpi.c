@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 #include <dlfcn.h>
 #include <mpi.h>
@@ -12,7 +13,7 @@
 #define PRINT_CMD_STATE 3
 
 #define DIM 4
-#define NUM_PARTICLES_PER_PROC 10
+#define NUM_PARTICLES_PER_PROC 20
 
 /********** Type Definitions *************/
 typedef struct _point
@@ -87,6 +88,7 @@ void maxloc(void *in, void *inout, int *len, MPI_Datatype *dptr)
     {
         if (invals[i].best_fit > inoutvals[i].best_fit)
         {
+            inoutvals[i].best_fit = invals[i].best_fit;
             for (j = 0; j < DIM; j++)
             {
                 inoutvals[i].best_fit_position[j] = invals[i].best_fit_position[j];
@@ -95,6 +97,27 @@ void maxloc(void *in, void *inout, int *len, MPI_Datatype *dptr)
     }
 
     return;
+}
+
+void create_MPI_proc_metadata(MPI_Datatype *proc_metadata_type, MPI_Op *maxloc_op)
+{
+    // Create MPI datatype for proc_metadata_t
+    MPI_Datatype types[2] = {MPI_DOUBLE, MPI_DOUBLE};
+    int block_lengths[2] = {1, DIM};
+    MPI_Aint displacements[2] = {offsetof(proc_metadata_t, best_fit), offsetof(proc_metadata_t, best_fit_position)};
+
+    // Create struct datatype
+    MPI_Type_create_struct(2, block_lengths, displacements, types, proc_metadata_type);
+    MPI_Type_commit(proc_metadata_type);
+
+    // Create MPI operation
+    MPI_Op_create((MPI_User_function *)maxloc, true, maxloc_op);
+}
+
+void free_MPI_proc_metadata(MPI_Datatype *proc_metadata_type, MPI_Op *maxloc_op)
+{
+    MPI_Op_free(maxloc_op);
+    MPI_Type_free(proc_metadata_type);
 }
 
 /********** Functions *************/
@@ -120,7 +143,7 @@ void init_particles(unsigned int *seeds)
     }
 }
 
-void find_overall_best_fit(double *overall_best_fit, double *overall_best_fit_position) 
+void find_overall_best_fit(double *overall_best_fit, double *overall_best_fit_position)
 {
     /**
      * States of execution
@@ -234,19 +257,14 @@ int pso_main(int n_pso, int print_freq)
         seeds[i] = rand();
     }
 
-    MPI_Op myOp;
-    MPI_Datatype ctype;
-
-    // Definition of proc_metadata_t for MPI
-    MPI_Type_contiguous(DIM + 1, MPI_DOUBLE, &ctype);
-    MPI_Type_commit(&ctype);
-
-    // Create the custom maxloc operation
-    MPI_Op_create(maxloc, true, &myOp);
-
     point_t overall_best_position;         // Coordinates of overall best
     proc_metadata_t proc_overall_best_fit; // Overall best for current process
     proc_metadata_t overall_best_fit;      // Overall best
+
+    // create MPI datatype and operation
+    MPI_Datatype proc_metadata_type;
+    MPI_Op maxloc_op;
+    create_MPI_proc_metadata(&proc_metadata_type, &maxloc_op);
 
     init_particles(seeds);
     for (int iter = 0; iter < n_pso; iter++)
@@ -254,7 +272,7 @@ int pso_main(int n_pso, int print_freq)
         proc_overall_best_fit.best_fit = __DBL_MAX__;
         find_overall_best_fit(&proc_overall_best_fit.best_fit, proc_overall_best_fit.best_fit_position);
         // Get overall best amongst all processes
-        MPI_Allreduce(&proc_overall_best_fit, &overall_best_fit, 1, ctype, myOp, MPI_COMM_WORLD);
+        MPI_Allreduce(&proc_overall_best_fit, &overall_best_fit, 1, proc_metadata_type, maxloc_op, MPI_COMM_WORLD);
 
         for (int j = 0; j < DIM; j++)
         {
@@ -278,6 +296,7 @@ int pso_main(int n_pso, int print_freq)
         printf("Overall Best Fit: %11.4e\n", overall_best_fit.best_fit);
     }
 
+    free_MPI_proc_metadata(&proc_metadata_type, &maxloc_op);
     return 0;
 }
 
@@ -345,8 +364,8 @@ int main(int argc, char **argv)
 {
     char netlist_cmd[32] = "mos_buffer5y.cir\n";
 
-    int n_pso = 20;      // Number of updates
-    int print_freq = 4;  // Print frequency
+    int n_pso = 20;     // Number of updates
+    int print_freq = 4; // Print frequency
 
     if (argc == 4)
     {
