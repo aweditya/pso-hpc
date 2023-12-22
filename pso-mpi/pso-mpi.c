@@ -13,7 +13,7 @@
 #define PRINT_CMD_STATE 3
 
 #define DIM 4
-#define NUM_PARTICLES_PER_PROC 20
+#define NUM_PARTICLES_PER_PROC 10
 
 /********** Type Definitions *************/
 typedef struct _point
@@ -248,7 +248,7 @@ void process_particle(point_t overall_best_position, unsigned int *seeds)
 
 int pso_main(int n_pso, int print_freq)
 {
-    srand(world_rank);
+    srand(world_rank + 1); // Start seeds from 1, not 0
 
     // Create an array of seeds, one for each thread
     unsigned int seeds[NUM_PARTICLES_PER_PROC];
