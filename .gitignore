@@ -1,2 +1,4 @@
 ngspice-ngspice/
 mpi-tutorial/
+pso/ngspice-dynamic/bin/
+pso-mpi/bin/
