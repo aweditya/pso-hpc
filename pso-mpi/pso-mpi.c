@@ -13,7 +13,7 @@
 #define PRINT_CMD_STATE 3
 
 #define DIM 4
-#define NUM_PARTICLES_PER_PROC 10
+#define NUM_PARTICLES_PER_PROC 20
 
 /********** Type Definitions *************/
 typedef struct _point
